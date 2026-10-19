@@ -5,6 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yiğit Akü - Fiyat ve Stok Yönetim Sistemi</title>
     <!-- Tailwind CSS -->
+window.batteryData = JSON.parse(localStorage.getItem('yigit_local_data') || JSON.stringify(defaultData));
+        
+        // Favorileri doğrudan tarayıcı hafızasından (localStorage) okuyoruz ki asla silinmesin
+        window.starredItems = JSON.parse(localStorage.getItem('yigit_starred_items') || '{}');
+
+        document.addEventListener("DOMContentLoaded", async function() {
+            setupTabs();
+            filterData();
+
+            try {
+                if (window.supabase) {
+                    const { createClient } = window.supabase;
+                    const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    window._supabase = _supabase;
+
+                    let { data, error } = await _supabase.from('yigit_aku').select('*');
+                    if (!error && data && data.length > 0) {
+                        window.batteryData = data;
+                        localStorage.setItem('yigit_local_data', JSON.stringify(data));
+                    } else if (!error && (!data || data.length === 0)) {
+                        await _supabase.from('yigit_aku').upsert(defaultData);
+                    }
+                }
+            } catch (err) {
+                console.log("Yerel mod aktif.");
+            } finally {
+                setupTabs();
+                filterData();
+            }
+        });
+
+        // Yıldızlama fonksiyonu (Yerel hafızaya anında kilitler)
+        async function toggleStarCloud(code) {
+            const currentStatus = window.starredItems[code] || false;
+            window.starredItems[code] = !currentStatus;
+            
+            // Tarayıcı hafızasına kalıcı olarak kaydediyoruz
+            localStorage.setItem('yigit_starred_items', JSON.stringify(window.starredItems));
+
+            // Eğer Supabase bağlıysa arkada oraya da kaydetmeye çalışır
+            if (window._supabase) {
+                try {
+                    await window._supabase.from('yigit_coksatanlar').upsert([{ code: code, is_starred: window.starredItems[code] }]);
+                } catch (e) {}
+            }
+            filterData();
+        }
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
