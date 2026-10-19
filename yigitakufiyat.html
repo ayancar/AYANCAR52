@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<link rel="icon" type="image/jpeg" href="logo.jpg">
+    <link rel="icon" type="image/jpeg" href="logo.jpg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yiğit Akü - Fiyat ve Stok Yönetim Sistemi</title>
@@ -160,7 +160,7 @@
         </div>
     </div>
 
-    <!-- SORUNSUZ ÇALIŞAN HİBRİT & LOCALSTORAGE KODLARI -->
+    <!-- KESİN ÇÖZÜMLÜ KALICI FAVORİ & SUPABASE KODLARI -->
     <script>
         const SUPABASE_URL = 'https://plvkbyobxqyhxcaelmnl.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_GlkE-W8kD4h4PBxdwDH4ZA_t4Gtd5cK';
@@ -249,7 +249,6 @@
             { category: "Ca-Sb Ağır Hizmet", code: "26152024", type: "12V 115 Ah D2 DÜZ MF", cca: "760", length: "349", width: "173", height: "235", pervaz: "Uzun Kenar Tırnaklı", desc: "", haric: "7.755,00 TL", iskonto: "6.591,75 TL", net: "7.910,10 TL", satis: "8.000,00 TL" }
         ];
 
-        // Verileri doğrudan yerel hafızadan (localStorage) alıyoruz
         window.batteryData = JSON.parse(localStorage.getItem('yigit_local_data') || JSON.stringify(defaultData));
         window.starredItems = JSON.parse(localStorage.getItem('yigit_starred_items') || '{}');
 
@@ -263,10 +262,20 @@
                     const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                     window._supabase = _supabase;
 
-                    let { data, error } = await _supabase.from('yigit_aku').select('*');
-                    if (!error && data && data.length > 0) {
-                        window.batteryData = data;
-                        localStorage.setItem('yigit_local_data', JSON.stringify(data));
+                    // 1. Ürün verilerini çek
+                    let { data: prodData, error: prodErr } = await _supabase.from('yigit_aku').select('*');
+                    if (!prodErr && prodData && prodData.length > 0) {
+                        window.batteryData = prodData;
+                        localStorage.setItem('yigit_local_data', JSON.stringify(prodData));
+                    }
+
+                    // 2. Yıldız/Çok Satanlar verilerini çek ve birleştir
+                    let { data: starData } = await _supabase.from('yigit_coksatanlar').select('*');
+                    if (starData && starData.length > 0) {
+                        starData.forEach(s => { 
+                            window.starredItems[s.code] = s.is_starred; 
+                        });
+                        localStorage.setItem('yigit_starred_items', JSON.stringify(window.starredItems));
                     }
                 }
             } catch (err) {
@@ -305,7 +314,7 @@
                 const matchSearch = (item.code || '').toLowerCase().includes(query) || (item.type || '').toLowerCase().includes(query);
                 if (!matchSearch) return false;
                 if (currentTab === 'Tümü') return true;
-                if (currentTab === 'Çok Satanlar') return window.starredItems[item.code];
+                if (currentTab === 'Çok Satanlar') return !!window.starredItems[item.code];
                 return item.category === currentTab;
             });
 
@@ -332,20 +341,25 @@
             `).join('');
         }
 
-        // Yıldızlama işlemi doğrudan tarayıcı hafızasına kilitlenir
-        function toggleStarCloud(code) {
-            const currentStatus = window.starredItems[code] || false;
+        // Yıldızlama işlemi
+        async function toggleStarCloud(code) {
+            const currentStatus = !!window.starredItems[code];
             window.starredItems[code] = !currentStatus;
             
-            // Kesinlikle silinmemesi için tarayıcının LocalStorage alanına kaydediyoruz
+            // Yerel hafızaya kaydet
             localStorage.setItem('yigit_starred_items', JSON.stringify(window.starredItems));
 
+            // Ekrana anında yansıt
+            filterData();
+
+            // Supabase bulutuna kaydet
             if (window._supabase) {
                 try {
-                    window._supabase.from('yigit_coksatanlar').upsert([{ code: code, is_starred: window.starredItems[code] }]);
-                } catch(e) {}
+                    await window._supabase.from('yigit_coksatanlar').upsert([{ code: code, is_starred: window.starredItems[code] }]);
+                } catch(e) {
+                    console.log("Supabase yıldız senkronizasyon hatası:", e);
+                }
             }
-            filterData();
         }
 
         function checkExistingProduct(codeVal) {
