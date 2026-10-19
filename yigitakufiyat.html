@@ -5,53 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yiğit Akü - Fiyat ve Stok Yönetim Sistemi</title>
     <!-- Tailwind CSS -->
-window.batteryData = JSON.parse(localStorage.getItem('yigit_local_data') || JSON.stringify(defaultData));
-        
-        // Favorileri doğrudan tarayıcı hafızasından (localStorage) okuyoruz ki asla silinmesin
-        window.starredItems = JSON.parse(localStorage.getItem('yigit_starred_items') || '{}');
-
-        document.addEventListener("DOMContentLoaded", async function() {
-            setupTabs();
-            filterData();
-
-            try {
-                if (window.supabase) {
-                    const { createClient } = window.supabase;
-                    const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    window._supabase = _supabase;
-
-                    let { data, error } = await _supabase.from('yigit_aku').select('*');
-                    if (!error && data && data.length > 0) {
-                        window.batteryData = data;
-                        localStorage.setItem('yigit_local_data', JSON.stringify(data));
-                    } else if (!error && (!data || data.length === 0)) {
-                        await _supabase.from('yigit_aku').upsert(defaultData);
-                    }
-                }
-            } catch (err) {
-                console.log("Yerel mod aktif.");
-            } finally {
-                setupTabs();
-                filterData();
-            }
-        });
-
-        // Yıldızlama fonksiyonu (Yerel hafızaya anında kilitler)
-        async function toggleStarCloud(code) {
-            const currentStatus = window.starredItems[code] || false;
-            window.starredItems[code] = !currentStatus;
-            
-            // Tarayıcı hafızasına kalıcı olarak kaydediyoruz
-            localStorage.setItem('yigit_starred_items', JSON.stringify(window.starredItems));
-
-            // Eğer Supabase bağlıysa arkada oraya da kaydetmeye çalışır
-            if (window._supabase) {
-                try {
-                    await window._supabase.from('yigit_coksatanlar').upsert([{ code: code, is_starred: window.starredItems[code] }]);
-                } catch (e) {}
-            }
-            filterData();
-        }
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -206,267 +159,7 @@ window.batteryData = JSON.parse(localStorage.getItem('yigit_local_data') || JSON
         </div>
     </div>
 
-    <!-- SUPABASE ENTEGRASYONLU TAM LİSTE KODLARI -->
-    <script>
-        const SUPABASE_URL = 'https://plvkbyobxqyhxcaelmnl.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_GlkE-W8kD4h4PBxdwDH4ZA_t4Gtd5cK';
-
-        // Sizin gönderdiğiniz tüm akü modellerinin eksiksiz listesi[cite: 1]
-        const defaultData = [
-            { category: "AGM Aküler", code: "25502450", type: "12V 50 Ah L1 DÜZ MF", cca: "480", length: "207", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "5.790,00 TL", iskonto: "4.921,50 TL", net: "5.905,80 TL", satis: "7.000,00 TL" },
-            { category: "AGM Aküler", code: "25602741", type: "12V 60 Ah L2 DÜZ MF", cca: "680", length: "242", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "6.915,00 TL", iskonto: "5.877,75 TL", net: "7.053,30 TL", satis: "8.000,00 TL" },
-            { category: "AGM Aküler", code: "25702588", type: "12V 70 Ah L3 DÜZ MF", cca: "760", length: "278", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "8.035,00 TL", iskonto: "6.829,75 TL", net: "8.195,70 TL", satis: "9.500,00 TL" },
-            { category: "AGM Aküler", code: "25802407", type: "12V 80 Ah L4 DÜZ MF", cca: "800", length: "315", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "9.160,00 TL", iskonto: "7.786,00 TL", net: "9.343,20 TL", satis: "10.500,00 TL" },
-            { category: "AGM Aküler", code: "25952065", type: "12V 95 Ah L5 DÜZ MF", cca: "850", length: "353", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "10.285,00 TL", iskonto: "8.742,25 TL", net: "10.490,70 TL", satis: "11.500,00 TL" },
-            { category: "AGM Aküler", code: "26052138", type: "12V 105 Ah L6 DÜZ MF", cca: "950", length: "392", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "11.405,00 TL", iskonto: "9.694,25 TL", net: "11.633,10 TL", satis: "12.700,00 TL" },
-            { category: "EFB Start-Stop", code: "25502629", type: "12V 50 Ah L1 DÜZ SMF", cca: "540", length: "207", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB", haric: "4.160,00 TL", iskonto: "3.536,00 TL", net: "4.243,20 TL", satis: "5.500,00 TL" },
-            { category: "EFB Start-Stop", code: "25632067", type: "12V 63 Ah L2 DÜZ MF", cca: "640", length: "242", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB", haric: "4.665,00 TL", iskonto: "3.965,25 TL", net: "4.758,30 TL", satis: "6.000,00 TL" },
-            { category: "EFB Start-Stop", code: "25722112", type: "12V 72 Ah L3 DÜZ MF", cca: "760", length: "278", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB", haric: "5.340,00 TL", iskonto: "4.539,00 TL", net: "5.446,80 TL", satis: "6.500,00 TL" },
-            { category: "EFB Start-Stop", code: "25842020", type: "12V 84 Ah L4 DÜZ MF", cca: "800", length: "315", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB", haric: "6.180,00 TL", iskonto: "5.253,00 TL", net: "6.303,60 TL", satis: "7.500,00 TL" },
-            { category: "EFB Start-Stop", code: "25632068", type: "12V 63 Ah L2B DÜZ MF", cca: "640", length: "242", width: "175", height: "175", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB-Alçak Kutu", haric: "4.665,00 TL", iskonto: "3.965,25 TL", net: "4.758,30 TL", satis: "6.000,00 TL" },
-            { category: "EFB Start-Stop", code: "25722113", type: "12V 72 Ah L3B DÜZ MF", cca: "760", length: "278", width: "175", height: "175", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB-Alçak Kutu", haric: "5.340,00 TL", iskonto: "4.539,00 TL", net: "5.446,80 TL", satis: "6.500,00 TL" },
-            { category: "EFB Start-Stop", code: "25842021", type: "12V 84 Ah L4B DÜZ MF", cca: "800", length: "315", width: "175", height: "175", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB-Alçak Kutu", haric: "6.180,00 TL", iskonto: "5.253,00 TL", net: "6.303,60 TL", satis: "7.500,00 TL" },
-            { category: "EFB Start-Stop", code: "25632072", type: "12V 63 Ah D23 DÜZ SMF", cca: "640", length: "230", width: "172", height: "225", pervaz: "Tırnaksız", desc: "EFB", haric: "4.665,00 TL", iskonto: "3.965,25 TL", net: "4.758,30 TL", satis: "6.000,00 TL" },
-            { category: "EFB Start-Stop", code: "25902384", type: "12V 90 Ah N70 DÜZ SMF", cca: "820", length: "306", width: "173", height: "225", pervaz: "Tırnaksız", desc: "EFB", haric: "6.630,00 TL", iskonto: "5.635,50 TL", net: "6.762,60 TL", satis: "8.000,00 TL" },
-            { category: "EFB Start-Stop", code: "25902385", type: "12V 90 Ah N70 TERS SMF", cca: "820", length: "306", width: "173", height: "225", pervaz: "Tırnaksız", desc: "EFB", haric: "6.630,00 TL", iskonto: "5.635,50 TL", net: "6.762,60 TL", satis: "8.000,00 TL" },
-            { category: "Tam Bakımsız Premium", code: "25602944", type: "12V 60 Ah L2 DÜZ SMF", cca: "540", length: "242", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "3.540,00 TL", iskonto: "3.009,00 TL", net: "3.610,80 TL", satis: "4.700,00 TL" },
-            { category: "Tam Bakımsız Premium", code: "25752308", type: "12V 75 Ah L3 DÜZ SMF", cca: "640", length: "278", width: "175", height: "190", pervaz: "Uzun Kenar Tırnaklı", desc: "", haric: "4.540,00 TL", iskonto: "3.859,00 TL", net: "4.630,80 TL", satis: "5.700,00 TL" },
-            { category: "Tam Bakımsız Premium", code: "26002329", type: "12V 100 Ah L5 DÜZ SMF", cca: "860", length: "353", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "6.870,00 TL", iskonto: "5.839,50 TL", net: "7.007,40 TL", satis: "8.000,00 TL" },
-            { category: "Tam Bakımsız Premium", code: "26002380", type: "12V 100 Ah L5B DÜZ SMF", cca: "860", length: "353", width: "175", height: "175", pervaz: "Tüm Kenar Tırnaklı", desc: "Alçak Kutu", haric: "6.870,00 TL", iskonto: "5.839,50 TL", net: "7.007,40 TL", satis: "8.000,00 TL" },
-            { category: "Tam Bakımsız Premium", code: "26102053", type: "12V 110 Ah L6 DÜZ SMF", cca: "920", length: "389", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "8.145,00 TL", iskonto: "6.923,25 TL", net: "8.307,90 TL", satis: "9.500,00 TL" },
-            { category: "Performans Serisi", code: "25502611", type: "12V 50 Ah L1 DÜZ MF", cca: "460", length: "207", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "3.440,00 TL", iskonto: "2.924,00 TL", net: "3.508,80 TL", satis: "4.600,00 TL" },
-            { category: "Performans Serisi", code: "25502612", type: "12V 50 Ah L1B DÜZ MF", cca: "460", length: "207", width: "175", height: "175", pervaz: "Tüm Kenar Tırnaklı", desc: "Alçak Kutu", haric: "3.440,00 TL", iskonto: "2.924,00 TL", net: "3.508,80 TL", satis: "4.600,00 TL" },
-            { category: "Performans Serisi", code: "25602955", type: "12V 60 Ah L2 DÜZ MF", cca: "540", length: "242", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "3.540,00 TL", iskonto: "3.009,00 TL", net: "3.610,80 TL", satis: "4.700,00 TL" },
-            { category: "Performans Serisi", code: "25602957", type: "12V 60 Ah L2B DÜZ MF", cca: "540", length: "242", width: "175", height: "175", pervaz: "Tüm Kenar Tırnaklı", desc: "Alçak Kutu", haric: "3.540,00 TL", iskonto: "3.009,00 TL", net: "3.610,80 TL", satis: "4.700,00 TL" },
-            { category: "Performans Serisi", code: "25602958", type: "12V 60 Ah L2 TERS MF", cca: "540", length: "242", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "3.540,00 TL", iskonto: "3.009,00 TL", net: "3.610,80 TL", satis: "4.700,00 TL" },
-            { category: "Performans Serisi", code: "25752319", type: "12V 75 Ah L3B DÜZ MF", cca: "640", length: "278", width: "175", height: "175", pervaz: "Tüm Kenar Tırnaklı", desc: "Alçak Kutu", haric: "4.540,00 TL", iskonto: "3.859,00 TL", net: "4.630,80 TL", satis: "5.700,00 TL" },
-            { category: "Performans Serisi", code: "25752316", type: "12V 75 Ah L3 DÜZ MF", cca: "640", length: "278", width: "175", height: "190", pervaz: "Uzun Kenar Tırnaklı", desc: "", haric: "4.540,00 TL", iskonto: "3.859,00 TL", net: "4.630,80 TL", satis: "5.700,00 TL" },
-            { category: "Performans Serisi", code: "25752317", type: "12V 75 Ah L3 TERS MF", cca: "640", length: "278", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "4.540,00 TL", iskonto: "3.859,00 TL", net: "4.630,80 TL", satis: "5.700,00 TL" },
-            { category: "Performans Serisi", code: "25802389", type: "12V 80 Ah L4B DÜZ MF", cca: "680", length: "315", width: "175", height: "175", pervaz: "Tüm Kenar Tırnaklı", desc: "Alçak Kutu", haric: "5.595,00 TL", iskonto: "4.755,75 TL", net: "5.706,90 TL", satis: "6.750,00 TL" },
-            { category: "Performans Serisi", code: "25802390", type: "12V 80 Ah L4 DÜZ SMF", cca: "680", length: "315", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "5.595,00 TL", iskonto: "4.755,75 TL", net: "5.706,90 TL", satis: "6.750,00 TL" },
-            { category: "Performans Serisi", code: "26002378", type: "12V 100 Ah L5 DÜZ MF", cca: "860", length: "353", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "6.870,00 TL", iskonto: "5.839,50 TL", net: "7.007,40 TL", satis: "8.000,00 TL" },
-            { category: "Performans Serisi", code: "26002379", type: "12V 100 Ah L5B DÜZ MF", cca: "860", length: "353", width: "175", height: "175", pervaz: "Tüm Kenar Tırnaklı", desc: "Alçak Kutu", haric: "6.870,00 TL", iskonto: "5.839,50 TL", net: "7.007,40 TL", satis: "8.000,00 TL" },
-            { category: "Performans Serisi", code: "26002114", type: "12V 100 Ah L5B TERS MF", cca: "860", length: "353", width: "175", height: "175", pervaz: "Tüm Kenar Tırnaklı", desc: "Alçak Kutu", haric: "6.870,00 TL", iskonto: "5.839,50 TL", net: "7.007,40 TL", satis: "8.000,00 TL" },
-            { category: "Performans Serisi", code: "26002123", type: "12V 100 Ah L5 TERS MF", cca: "860", length: "353", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "6.870,00 TL", iskonto: "5.839,50 TL", net: "7.007,40 TL", satis: "8.000,00 TL" },
-            { category: "Askeri Tip", code: "26252021", type: "12V 125 Ah D7 DÜZ MF", cca: "800", length: "286", width: "270", height: "230", pervaz: "Tırnaksız", desc: "", haric: "15.730,00 TL", iskonto: "13.370,50 TL", net: "16.044,60 TL", satis: "17.000,00 TL" },
-            { category: "Japon / Uzak Doğu", code: "25422070", type: "12V 42 Ah NS40 DÜZ SMF", cca: "300", length: "197", width: "128", height: "225", pervaz: "Tırnaksız", desc: "Tırnaklı Tipi Mevcuttur", haric: "3.280,00 TL", iskonto: "2.788,00 TL", net: "3.345,60 TL", satis: "4.500,00 TL" },
-            { category: "Japon / Uzak Doğu", code: "25422073", type: "12V 42 Ah NS40 TERS SMF", cca: "300", length: "197", width: "128", height: "225", pervaz: "Tırnaksız", desc: "", haric: "3.280,00 TL", iskonto: "2.788,00 TL", net: "3.345,60 TL", satis: "4.500,00 TL" },
-            { category: "Japon / Uzak Doğu", code: "25602960", type: "12V 60 Ah NS60 DÜZ SMF", cca: "430", length: "236", width: "128", height: "225", pervaz: "Tırnaksız", desc: "", haric: "4.275,00 TL", iskonto: "3.633,75 TL", net: "4.360,50 TL", satis: "5.500,00 TL" },
-            { category: "Japon / Uzak Doğu", code: "25602961", type: "12V 60 Ah NS60 TERS SMF", cca: "430", length: "236", width: "128", height: "225", pervaz: "Tırnaksız", desc: "", haric: "4.275,00 TL", iskonto: "3.633,75 TL", net: "4.360,50 TL", satis: "5.500,00 TL" },
-            { category: "Japon / Uzak Doğu", code: "25602833", type: "12V 60 Ah D23 DÜZ SMF", cca: "540", length: "230", width: "172", height: "225", pervaz: "Tırnaksız", desc: "Tırnaklı Tipi Mevcuttur", haric: "4.275,00 TL", iskonto: "3.633,75 TL", net: "4.360,50 TL", satis: "5.500,00 TL" },
-            { category: "Japon / Uzak Doğu", code: "25602952", type: "12V 60 Ah D23 TERS SMF", cca: "540", length: "230", width: "172", height: "225", pervaz: "Tırnaksız", desc: "Tırnaklı Tipi Mevcuttur", haric: "4.275,00 TL", iskonto: "3.633,75 TL", net: "4.360,50 TL", satis: "5.500,00 TL" },
-            { category: "Japon / Uzak Doğu", code: "25612024", type: "12V 60 Ah GR86 DÜZ SMF", cca: "540", length: "230", width: "172", height: "209", pervaz: "Uzun Kenar Tırnaklı", desc: "", haric: "4.275,00 TL", iskonto: "3.633,75 TL", net: "4.360,50 TL", satis: "5.500,00 TL" },
-            { category: "Japon / Uzak Doğu", code: "25612023", type: "12V 60 Ah GR86 TERS SMF", cca: "540", length: "230", width: "172", height: "209", pervaz: "Uzun Kenar Tırnaklı", desc: "Tırnaklı Tipi Mevcuttur", haric: "4.275,00 TL", iskonto: "3.633,75 TL", net: "4.360,50 TL", satis: "5.500,00 TL" },
-            { category: "Japon / Uzak Doğu", code: "25702527", type: "12V 70 Ah N50 DÜZ SMF", cca: "580", length: "260", width: "170", height: "225", pervaz: "Tırnaksız", desc: "", haric: "5.170,00 TL", iskonto: "4.394,50 TL", net: "5.273,40 TL", satis: "6.500,00 TL" },
-            { category: "Japon / Uzak Doğu", code: "25702529", type: "12V 70 Ah N50 DÜZ SMF", cca: "580", length: "260", width: "170", height: "225", pervaz: "Uzun Kenar Tırnaklı", desc: "Tırnaklı Tipi Mevcuttur", haric: "5.170,00 TL", iskonto: "4.394,50 TL", net: "5.273,40 TL", satis: "6.500,00 TL" },
-            { category: "Japon / Uzak Doğu", code: "25702528", type: "12V 70 Ah N50 TERS SMF", cca: "580", length: "260", width: "170", height: "225", pervaz: "Tırnaksız", desc: "Tırnaklı Tipi Mevcuttur", haric: "5.170,00 TL", iskonto: "4.394,50 TL", net: "5.273,40 TL", satis: "6.500,00 TL" },
-            { category: "Japon / Uzak Doğu", code: "25902386", type: "12V 90 Ah N70 DÜZ SMF", cca: "700", length: "306", width: "173", height: "225", pervaz: "Tırnaksız", desc: "Tırnaklı Tipi Mevcuttur", haric: "5.985,00 TL", iskonto: "5.087,25 TL", net: "6.104,70 TL", satis: "7.200,00 TL" },
-            { category: "Japon / Uzak Doğu", code: "25902282", type: "12V 90 Ah N70 DÜZ SMF", cca: "700", length: "306", width: "173", height: "225", pervaz: "Uzun Kenar Tırnaklı", desc: "", haric: "5.985,00 TL", iskonto: "5.087,25 TL", net: "6.104,70 TL", satis: "7.200,00 TL" },
-            { category: "Japon / Uzak Doğu", code: "25902387", type: "12V 90 Ah N70 TERS SMF", cca: "700", length: "306", width: "173", height: "225", pervaz: "Tırnaksız", desc: "", haric: "5.985,00 TL", iskonto: "5.087,25 TL", net: "6.104,70 TL", satis: "7.200,00 TL" },
-            { category: "Japon / Uzak Doğu", code: "26002381", type: "12V 100 Ah N70 DÜZ SMF", cca: "800", length: "306", width: "173", height: "225", pervaz: "Uzun Kenar Tırnaklı", desc: "Tırnaklı Tipi Mevcuttur", haric: "6.530,00 TL", iskonto: "5.550,50 TL", net: "6.660,60 TL", satis: "7.800,00 TL" },
-            { category: "Japon / Uzak Doğu", code: "26002382", type: "12V 100 Ah N70 TERS SMF", cca: "800", length: "306", width: "173", height: "225", pervaz: "Uzun Kenar Tırnaklı", desc: "", haric: "6.530,00 TL", iskonto: "5.550,50 TL", net: "6.660,60 TL", satis: "7.800,00 TL" },
-            { category: "Ağır Hizmet EFB", code: "26202207", type: "12V 120 Ah D4A DÜZ MF", cca: "920", length: "513", width: "189", height: "223", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB", haric: "8.990,00 TL", iskonto: "7.641,50 TL", net: "9.169,80 TL", satis: "10.200,00 TL" },
-            { category: "Ağır Hizmet EFB", code: "26282016", type: "12V 128 Ah D3 DÜZ MF", cca: "760", length: "358", width: "175", height: "280", pervaz: "Uzun Kenar Tırnaklı", desc: "EFB", haric: "9.550,00 TL", iskonto: "8.117,50 TL", net: "9.741,00 TL", satis: "10.800,00 TL" },
-            { category: "Ağır Hizmet EFB", code: "26352088", type: "12V 135 Ah D4A DÜZ MF", cca: "950", length: "513", width: "189", height: "223", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB", haric: "9.665,00 TL", iskonto: "8.215,25 TL", net: "9.858,30 TL", satis: "10.900,00 TL" },
-            { category: "Ağır Hizmet EFB", code: "26502256", type: "12V 150 Ah B150 DÜZ MF", cca: "1150", length: "513", width: "223", height: "223", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB", haric: "10.900,00 TL", iskonto: "9.265,00 TL", net: "11.118,00 TL", satis: "12.250,00 TL" },
-            { category: "Ağır Hizmet EFB", code: "26652078", type: "12V 165 Ah B150 DÜZ MF", cca: "1200", length: "513", width: "223", height: "223", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB", haric: "11.235,00 TL", iskonto: "9.549,75 TL", net: "11.459,70 TL", satis: "12.500,00 TL" },
-            { category: "Ağır Hizmet EFB", code: "26802192", type: "12V 180 Ah B150 DÜZ MF", cca: "1200", length: "513", width: "223", height: "223", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB", haric: "12.920,00 TL", iskonto: "10.982,00 TL", net: "13.178,40 TL", satis: "14.250,00 TL" },
-            { category: "Ağır Hizmet EFB", code: "26902047", type: "12V 190 Ah B150 DÜZ MF", cca: "1300", length: "513", width: "223", height: "223", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB", haric: "13.765,00 TL", iskonto: "11.700,25 TL", net: "14.040,30 TL", satis: "15.000,00 TL" },
-            { category: "Ağır Hizmet EFB", code: "27002182", type: "12V 200 Ah D6 DÜZ MF", cca: "1450", length: "518", width: "276", height: "242", pervaz: "Tırnaksız", desc: "EFB", haric: "14.045,00 TL", iskonto: "11.938,25 TL", net: "14.325,90 TL", satis: "15.000,00 TL" },
-            { category: "Ağır Hizmet EFB", code: "27252109", type: "12V 225 Ah D6 DÜZ MF", cca: "1450", length: "518", width: "276", height: "242", pervaz: "Tırnaksız", desc: "EFB", haric: "16.745,00 TL", iskonto: "14.233,25 TL", net: "17.079,90 TL", satis: "18.000,00 TL" },
-            { category: "Ağır Hizmet EFB", code: "27402032", type: "12V 240 Ah D6 DÜZ MF", cca: "1200", length: "518", width: "276", height: "242", pervaz: "Tırnaksız", desc: "EFB", haric: "17.415,00 TL", iskonto: "14.802,75 TL", net: "17.763,30 TL", satis: "18.900,00 TL" },
-            { category: "Ağır Hizmet EFB", code: "27502006", type: "12V 250 Ah D6 DÜZ MF", cca: "1250", length: "518", width: "276", height: "242", pervaz: "Tırnaksız", desc: "EFB", haric: "18.090,00 TL", iskonto: "15.376,50 TL", net: "18.451,80 TL", satis: "19.500,00 TL" },
-            { category: "Süper Ağır SMF", code: "26202205", type: "12V 120 Ah D4A DÜZ SMF", cca: "800", length: "513", width: "188", height: "223", pervaz: "Tırnaksız", desc: "EFB", haric: "8.990,00 TL", iskonto: "7.641,50 TL", net: "9.169,80 TL", satis: "10.300,00 TL" },
-            { category: "Süper Ağır SMF", code: "26352092", type: "12V 135 Ah D4A DÜZ SMF", cca: "860", length: "513", width: "188", height: "223", pervaz: "Tırnaksız", desc: "EFB", haric: "9.665,00 TL", iskonto: "8.215,25 TL", net: "9.858,30 TL", satis: "11.000,00 TL" },
-            { category: "Süper Ağır SMF", code: "26352093", type: "12V 135 Ah D4A DÜZ SMF", cca: "860", length: "513", width: "188", height: "223", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB", haric: "9.665,00 TL", iskonto: "8.215,25 TL", net: "9.858,30 TL", satis: "11.000,00 TL" },
-            { category: "Süper Ağır SMF", code: "26502255", type: "12V 150 Ah D5 DÜZ SMF", cca: "900", length: "513", width: "223", height: "223", pervaz: "Tırnaksız", desc: "EFB", haric: "10.900,00 TL", iskonto: "9.265,00 TL", net: "11.118,00 TL", satis: "12.300,00 TL" },
-            { category: "Süper Ağır SMF", code: "26502257", type: "12V 150 Ah D5 DÜZ SMF", cca: "900", length: "513", width: "223", height: "223", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB", haric: "10.900,00 TL", iskonto: "9.265,00 TL", net: "11.118,00 TL", satis: "12.300,00 TL" },
-            { category: "Süper Ağır SMF", code: "26652077", type: "12V 165 Ah D5 DÜZ SMF", cca: "1020", length: "513", width: "223", height: "223", pervaz: "Tırnaksız", desc: "EFB", haric: "11.235,00 TL", iskonto: "9.549,75 TL", net: "11.459,70 TL", satis: "12.600,00 TL" },
-            { category: "Süper Ağır SMF", code: "26802190", type: "12V 180 Ah D5 DÜZ SMF", cca: "1100", length: "513", width: "223", height: "223", pervaz: "Tırnaksız", desc: "EFB", haric: "12.920,00 TL", iskonto: "10.982,00 TL", net: "13.178,40 TL", satis: "14.300,00 TL" },
-            { category: "Süper Ağır SMF", code: "26802193", type: "12V 180 Ah D5 DÜZ SMF", cca: "1200", length: "513", width: "223", height: "223", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB", haric: "12.920,00 TL", iskonto: "10.982,00 TL", net: "13.178,40 TL", satis: "14.300,00 TL" },
-            { category: "Süper Ağır SMF", code: "27002180", type: "12V 200 Ah D6 DÜZ SMF", cca: "1250", length: "518", width: "276", height: "242", pervaz: "Tırnaksız", desc: "EFB", haric: "14.045,00 TL", iskonto: "11.938,25 TL", net: "14.325,90 TL", satis: "15.500,00 TL" },
-            { category: "Süper Ağır SMF", code: "27252087", type: "12V 225 Ah D6 DÜZ SMF", cca: "950", length: "518", width: "276", height: "242", pervaz: "Tırnaksız", desc: "EFB", haric: "16.745,00 TL", iskonto: "14.233,25 TL", net: "17.079,90 TL", satis: "18.000,00 TL" },
-            { category: "Süper Ağır SMF", code: "27402026", type: "12V 240 Ah D6 DÜZ SMF", cca: "1020", length: "518", width: "276", height: "242", pervaz: "Tırnaksız", desc: "EFB", haric: "17.415,00 TL", iskonto: "14.802,75 TL", net: "17.763,30 TL", satis: "19.000,00 TL" },
-            { category: "Süper Ağır SMF", code: "27402033", type: "12V 240 Ah VRLA TYPE-C DÜZ ME", cca: "1200", length: "518", width: "276", height: "242", pervaz: "Tırnaksız", desc: "SDC / Jel Akü", haric: "-", iskonto: "-", net: "-", satis: "-" },
-            { category: "Ca-Sb Ağır Hizmet", code: "25902391", type: "12V 90 Ah H3 DÜZ MF", cca: "740", length: "324", width: "175", height: "227", pervaz: "Tüm Kenar Tırnaklı", desc: "SHD", haric: "6.410,00 TL", iskonto: "5.448,50 TL", net: "6.538,20 TL", satis: "7.700,00 TL" },
-            { category: "Ca-Sb Ağır Hizmet", code: "26052130", type: "12V 105 Ah H4 DÜZ MF", cca: "820", length: "346", width: "175", height: "230", pervaz: "Tüm Kenar Tırnaklı", desc: "SHD", haric: "6.970,00 TL", iskonto: "5.924,50 TL", net: "7.109,40 TL", satis: "8.300,00 TL" },
-            { category: "Ca-Sb Ağır Hizmet", code: "26052133", type: "12V 105 Ah D2 DÜZ MF", cca: "860", length: "349", width: "175", height: "235", pervaz: "Uzun Kenar Tırnaklı", desc: "", haric: "6.970,00 TL", iskonto: "5.924,50 TL", net: "7.109,40 TL", satis: "8.300,00 TL" },
-            { category: "Ca-Sb Ağır Hizmet", code: "26052132", type: "12V 105 Ah BCI DÜZ MF", cca: "840", length: "330", width: "172", height: "238", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "7.025,00 TL", iskonto: "5.971,25 TL", net: "7.165,50 TL", satis: "7.300,00 TL" },
-            { category: "Ca-Sb Ağır Hizmet", code: "26052145", type: "12V 105 Ah BCI TERS SMF", cca: "840", length: "330", width: "172", height: "238", pervaz: "Tırnaksız", desc: "", haric: "7.025,00 TL", iskonto: "5.971,25 TL", net: "7.165,50 TL", satis: "7.300,00 TL" },
-            { category: "Ca-Sb Ağır Hizmet", code: "26152024", type: "12V 115 Ah D2 DÜZ MF", cca: "760", length: "349", width: "173", height: "235", pervaz: "Uzun Kenar Tırnaklı", desc: "", haric: "7.755,00 TL", iskonto: "6.591,75 TL", net: "7.910,10 TL", satis: "8.000,00 TL" }
-        ];
-
-        window.batteryData = defaultData;
-        window.starredItems = {};
-
-        document.addEventListener("DOMContentLoaded", async function() {
-            try {
-                if (window.supabase) {
-                    const { createClient } = window.supabase;
-                    const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    window._supabase = _supabase;
-
-                    let { data } = await _supabase.from('yigit_aku').select('*');
-                    if (data && data.length > 0) {
-                        window.batteryData = data;
-                    } else {
-                        await _supabase.from('yigit_aku').upsert(defaultData);
-                    }
-                }
-            } catch (err) {
-                console.log("Supabase bağlantısı aktif.");
-            } finally {
-                setupTabs();
-                filterData();
-            }
-        });
-
-        let currentTab = 'Tümü';
-
-        function setupTabs() {
-            const categories = ['Tümü', 'Çok Satanlar', ...new Set((window.batteryData || []).map(i => i.category))];
-            const container = document.getElementById('tabContainer');
-            if(!container) return;
-            container.innerHTML = categories.map(cat => `
-                <button onclick="switchTab('${cat}')" class="px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition border ${cat === currentTab ? 'bg-red-600 text-white border-red-600 shadow-lg' : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-white'}">
-                    ${cat}
-                </button>
-            `).join('');
-        }
-
-        function switchTab(cat) {
-            currentTab = cat;
-            setupTabs();
-            filterData();
-        }
-
-        function filterData() {
-            const query = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
-            const tableBody = document.getElementById('tableBody');
-            if(!tableBody) return;
-
-            const filtered = (window.batteryData || []).filter(item => {
-                const matchSearch = (item.code || '').toLowerCase().includes(query) || (item.type || '').toLowerCase().includes(query);
-                if (!matchSearch) return false;
-                if (currentTab === 'Tümü') return true;
-                if (currentTab === 'Çok Satanlar') return item.is_starred;
-                return item.category === currentTab;
-            });
-
-            document.getElementById('productCountBadge').textContent = filtered.length;
-
-            if (filtered.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-zinc-500">Ürün bulunamadı.</td></tr>`;
-                return;
-            }
-
-            tableBody.innerHTML = filtered.map(item => `
-                <tr class="hover:bg-zinc-800/40 transition">
-                    <td class="p-3 text-center cursor-pointer text-base ${item.is_starred ? 'text-amber-400' : 'text-zinc-700'}" onclick="toggleStarCloud('${item.code}')">★</td>
-                    <td class="p-3 font-mono font-bold text-red-400">${item.code || ''}</td>
-                    <td class="p-3 font-semibold text-white">${item.type || ''}</td>
-                    <td class="p-3 text-center text-zinc-300">${item.cca || '-'}</td>
-                    <td class="p-3 text-center text-zinc-400 text-[11px]">${item.length || ''}x${item.width || ''}x${item.height || ''}</td>
-                    <td class="p-3 text-zinc-400 text-[11px]">${item.pervaz || ''} ${item.desc ? '('+item.desc+')' : ''}</td>
-                    <td class="p-3 text-right text-amber-300 font-semibold">${item.haric || '-'}</td>
-                    <td class="p-3 text-right text-zinc-300">${item.iskonto || '-'}</td>
-                    <td class="p-3 text-right text-emerald-400 font-bold">${item.net || '-'}</td>
-                    <td class="p-3 text-right text-red-400 font-bold">${item.satis || '-'}</td>
-                </tr>
-            `).join('');
-        }
-
-        async function toggleStarCloud(code) {
-            const item = window.batteryData.find(i => i.code === code);
-            if (item) {
-                item.is_starred = !item.is_starred;
-                if (window._supabase) {
-                    await window._supabase.from('yigit_aku').update({ is_starred: item.is_starred }).eq('code', code);
-                }
-                filterData();
-            }
-        }
-
-        function checkExistingProduct(codeVal) {
-            const cleanCode = codeVal.trim();
-            const found = (window.batteryData || []).find(i => i.code === cleanCode);
-            const deleteBtn = document.getElementById('deleteBtn');
-            if(found) {
-                document.getElementById('pCategory').value = found.category;
-                document.getElementById('editOriginalCode').value = found.code;
-                document.getElementById('pType').value = found.type;
-                document.getElementById('pCca').value = found.cca || '';
-                document.getElementById('pLen').value = found.length || '';
-                document.getElementById('pWid').value = found.width || '';
-                document.getElementById('pHei').value = found.height || '';
-                document.getElementById('pPervaz').value = found.pervaz || '';
-                document.getElementById('pDesc').value = found.desc || '';
-                document.getElementById('pHaric').value = found.haric || '';
-                document.getElementById('pIskonto').value = found.iskonto || '';
-                document.getElementById('pNet').value = found.net || '';
-                document.getElementById('pSatis').value = found.satis || '';
-                deleteBtn.classList.remove('hidden');
-            } else {
-                deleteBtn.classList.add('hidden');
-            }
-        }
-
-        function openManageModal() {
-            document.getElementById('productForm').reset();
-            document.getElementById('editOriginalCode').value = '';
-            document.getElementById('deleteBtn').classList.add('hidden');
-            document.getElementById('manageModal').classList.remove('hidden');
-        }
-
-        function closeManageModal() {
-            document.getElementById('manageModal').classList.add('hidden');
-        }
-
-        async function handleProductSubmit(e) {
-            e.preventDefault();
-            const prod = {
-                category: document.getElementById('pCategory').value,
-                code: document.getElementById('pCode').value.trim(),
-                type: document.getElementById('pType').value.trim(),
-                cca: document.getElementById('pCca').value.trim(),
-                length: document.getElementById('pLen').value.trim(),
-                width: document.getElementById('pWid').value.trim(),
-                height: document.getElementById('pHei').value.trim(),
-                pervaz: document.getElementById('pPervaz').value.trim(),
-                desc: document.getElementById('pDesc').value.trim(),
-                haric: document.getElementById('pHaric').value.trim(),
-                iskonto: document.getElementById('pIskonto').value.trim(),
-                net: document.getElementById('pNet').value.trim(),
-                satis: document.getElementById('pSatis').value.trim()
-            };
-
-            const idx = window.batteryData.findIndex(i => i.code === prod.code);
-            if (idx !== -1) window.batteryData[idx] = prod;
-            else window.batteryData.push(prod);
-
-            if (window._supabase) {
-                await window._supabase.from('yigit_aku').upsert([prod]);
-            }
-
-            closeManageModal();
-            setupTabs();
-            filterData();
-        }
-
-        async function deleteCurrentProduct() {
-            const code = document.getElementById('pCode').value.trim();
-            if(code && confirm('Bu aküyü silmek istediğinize emin misiniz?')) {
-                window.batteryData = window.batteryData.filter(i => i.code !== code);
-                if (window._supabase) {
-                    await window._supabase.from('yigit_aku').delete().eq('code', code);
-                }
-                closeManageModal();
-                setupTabs();
-                filterData();
-            }
-        }
-    </script>
-<!-- SUPABASE ENTEGRASYONLU VE KALICI FAVORİ SİSTEMLİ KODLAR -->
+    <!-- SORUNSUZ ÇALIŞAN HİBRİT & LOCALSTORAGE KODLARI -->
     <script>
         const SUPABASE_URL = 'https://plvkbyobxqyhxcaelmnl.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_GlkE-W8kD4h4PBxdwDH4ZA_t4Gtd5cK';
@@ -555,8 +248,9 @@ window.batteryData = JSON.parse(localStorage.getItem('yigit_local_data') || JSON
             { category: "Ca-Sb Ağır Hizmet", code: "26152024", type: "12V 115 Ah D2 DÜZ MF", cca: "760", length: "349", width: "173", height: "235", pervaz: "Uzun Kenar Tırnaklı", desc: "", haric: "7.755,00 TL", iskonto: "6.591,75 TL", net: "7.910,10 TL", satis: "8.000,00 TL" }
         ];
 
+        // Verileri doğrudan yerel hafızadan (localStorage) alıyoruz
         window.batteryData = JSON.parse(localStorage.getItem('yigit_local_data') || JSON.stringify(defaultData));
-        window.starredItems = {};
+        window.starredItems = JSON.parse(localStorage.getItem('yigit_starred_items') || '{}');
 
         document.addEventListener("DOMContentLoaded", async function() {
             setupTabs();
@@ -572,18 +266,10 @@ window.batteryData = JSON.parse(localStorage.getItem('yigit_local_data') || JSON
                     if (!error && data && data.length > 0) {
                         window.batteryData = data;
                         localStorage.setItem('yigit_local_data', JSON.stringify(data));
-                    } else if (!error && (!data || data.length === 0)) {
-                        await _supabase.from('yigit_aku').upsert(defaultData);
-                    }
-
-                    // Favorileri (Çok Satanlar) ayrı tablodan güvenli şekilde çek
-                    let { data: starData } = await _supabase.from('yigit_coksatanlar').select('*');
-                    if (starData) {
-                        starData.forEach(s => { window.starredItems[s.code] = s.is_starred; });
                     }
                 }
             } catch (err) {
-                console.log("Supabase/Hibrit bağlantı aktif.");
+                console.log("Yerel mod devrede.");
             } finally {
                 setupTabs();
                 filterData();
@@ -631,7 +317,7 @@ window.batteryData = JSON.parse(localStorage.getItem('yigit_local_data') || JSON
 
             tableBody.innerHTML = filtered.map(item => `
                 <tr class="hover:bg-zinc-800/40 transition">
-                    <td class="p-3 text-center cursor-pointer text-base ${window.starredItems[item.code] ? 'text-amber-400' : 'text-zinc-700'}" onclick="window.toggleStarCloud('${item.code}')">★</td>
+                    <td class="p-3 text-center cursor-pointer text-base ${window.starredItems[item.code] ? 'text-amber-400' : 'text-zinc-700'}" onclick="toggleStarCloud('${item.code}')">★</td>
                     <td class="p-3 font-mono font-bold text-red-400">${item.code || ''}</td>
                     <td class="p-3 font-semibold text-white">${item.type || ''}</td>
                     <td class="p-3 text-center text-zinc-300">${item.cca || '-'}</td>
@@ -645,12 +331,18 @@ window.batteryData = JSON.parse(localStorage.getItem('yigit_local_data') || JSON
             `).join('');
         }
 
-        async function toggleStarCloud(code) {
+        // Yıldızlama işlemi doğrudan tarayıcı hafızasına kilitlenir
+        function toggleStarCloud(code) {
             const currentStatus = window.starredItems[code] || false;
             window.starredItems[code] = !currentStatus;
             
+            // Kesinlikle silinmemesi için tarayıcının LocalStorage alanına kaydediyoruz
+            localStorage.setItem('yigit_starred_items', JSON.stringify(window.starredItems));
+
             if (window._supabase) {
-                await window._supabase.from('yigit_coksatanlar').upsert([{ code: code, is_starred: window.starredItems[code] }]);
+                try {
+                    window._supabase.from('yigit_coksatanlar').upsert([{ code: code, is_starred: window.starredItems[code] }]);
+                } catch(e) {}
             }
             filterData();
         }
@@ -696,7 +388,7 @@ window.batteryData = JSON.parse(localStorage.getItem('yigit_local_data') || JSON
             const newCode = document.getElementById('pCode').value.trim();
 
             if (oldCode && oldCode !== newCode) {
-                await deleteProductFromCloudSilent(oldCode);
+                window.batteryData = window.batteryData.filter(i => i.code !== oldCode);
             }
 
             const prod = {
@@ -725,7 +417,9 @@ window.batteryData = JSON.parse(localStorage.getItem('yigit_local_data') || JSON
             localStorage.setItem('yigit_local_data', JSON.stringify(window.batteryData));
 
             if (window._supabase) {
-                await window._supabase.from('yigit_aku').upsert([prod]);
+                try {
+                    await window._supabase.from('yigit_aku').upsert([prod]);
+                } catch(e) {}
             }
 
             closeManageModal();
@@ -733,18 +427,16 @@ window.batteryData = JSON.parse(localStorage.getItem('yigit_local_data') || JSON
             filterData();
         }
 
-        async function deleteProductFromCloudSilent(code) {
-            window.batteryData = window.batteryData.filter(i => i.code !== code);
-            localStorage.setItem('yigit_local_data', JSON.stringify(window.batteryData));
-            if (window._supabase) {
-                await window._supabase.from('yigit_aku').delete().eq('code', code);
-            }
-        }
-
         async function deleteCurrentProduct() {
             const code = document.getElementById('pCode').value.trim();
             if(code && confirm('Bu Yiğit aküyü silmek istediğinize emin misiniz?')) {
-                await deleteProductFromCloudSilent(code);
+                window.batteryData = window.batteryData.filter(i => i.code !== code);
+                localStorage.setItem('yigit_local_data', JSON.stringify(window.batteryData));
+                if (window._supabase) {
+                    try {
+                        await window._supabase.from('yigit_aku').delete().eq('code', code);
+                    } catch(e) {}
+                }
                 closeManageModal();
                 setupTabs();
                 filterData();
