@@ -1,7 +1,78 @@
 <!DOCTYPE html>
 <html lang="tr">
-<head>
+<!-- YEDEK ALMA VE YÜKLEME PANELİ -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 no-print">
+    <div class="bg-[#111827] border border-blue-900/40 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+            <i class="fa-solid fa-database text-blue-400 text-xl"></i>
+            <div>
+                <h4 class="text-xs font-bold text-white">Sistem Veri Güvenliği & Yedekleme</h4>
+                <p class="text-[10px] text-blue-300/70">Tüm verilerinizi tek tıkla bilgisayarınıza indirebilir veya geri yükleyebilirsiniz.</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2 w-full sm:w-auto">
+            <button onclick="exportSystemBackup()" class="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 shadow-lg">
+                <i class="fa-solid fa-download"></i>
+                <span>Tüm Verileri Yedekle (İndir)</span>
+            </button>
+            <label class="flex-1 sm:flex-none px-4 py-2 bg-blue-900/50 hover:bg-blue-800 text-blue-200 border border-blue-700/50 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 cursor-pointer">
+                <i class="fa-solid fa-upload"></i>
+                <span>Yedek Yükle</span>
+                <input type="file" id="backupFileInput" accept=".json" onchange="importSystemBackup(event)" class="hidden">
+            </label>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tüm Modüllerin Verilerini Tek Dosyada İndirir
+    function exportSystemBackup() {
+        const backupData = {
+            date: new Date().toISOString(),
+            bosch_data: localStorage.getItem('bosch_local_data'),
+            klc_products: localStorage.getItem('klc_local_products'),
+            cek_senet_records: localStorage.getItem('cekSenetRecords')
+        };
+
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `AyanOto_Sistem_Yedek_${new Date().toISOString().slice(0,10)}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    // İndirilen Yedek Dosyasını Sisteme Geri Yükler
+    function importSystemBackup(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.bosch_data) localStorage.setItem('bosch_local_data', data.bosch_data);
+                if (data.klc_products) localStorage.setItem('klc_local_products', data.klc_products);
+                if (data.cek_senet_records) localStorage.setItem('cekSenetRecords', data.cek_senet_records);
+
+                alert("Tüm veriler başarıyla geri yüklendi! Sayfa yenileniyor...");
+                location.reload();
+            } catch (err) {
+                alert("Hata: Geçersiz yedek dosyası!");
+            }
+        };
+        reader.readAsText(file);
+    }
+</script>
+<link rel="manifest" href="manifest.json">
+<head><!-- PWA Manifest Bağlantısı -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#090d16">
     <meta charset="UTF-8">
+<!-- PWA Manifest Bağlantısı -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#090d16">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ayan Oto Elektrik - İşletme Yönetim Paneli</title>
     <!-- Tailwind CSS -->
@@ -170,4 +241,54 @@
         });
     </script>
 </body>
+<!-- BASİT ŞİFRE / GİRİŞ KONTROLÜ MODALI -->
+    <div id="authModal" class="fixed inset-0 bg-[#090d16]/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-[#111827] border border-blue-900/50 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 text-2xl mx-auto">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-white">Ayan Oto Elektrik</h3>
+                <p class="text-xs text-blue-300/70 mt-1">Yönetim paneline erişmek için lütfen şifrenizi girin.</p>
+            </div>
+            <form onsubmit="checkPin(event)" class="space-y-3">
+                <input type="password" id="pinInput" placeholder="PIN / Şifre" required 
+                    class="w-full bg-[#090d16] border border-blue-900/50 rounded-xl px-4 py-3 text-center text-lg tracking-widest text-white focus:outline-none focus:border-blue-500">
+                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-lg text-xs uppercase tracking-wider">
+                    Giriş Yap
+                </button>
+            </form>
+            <p id="pinError" class="text-xs text-red-400 hidden">Hatalı şifre! Tekrar deneyin.</p>
+        </div>
+    </div>
+
+    <!-- ŞİFRE KONTROL SCRIPT'İ -->
+    <script>
+        // İstediğiniz şifreyi buraya yazabilirsiniz (Varsayılan: 5252)
+        const SYSTEM_PIN = "5252"; 
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const isAuth = sessionStorage.getItem("ayan_oto_auth");
+            if (isAuth === "true") {
+                const modal = document.getElementById('authModal');
+                if(modal) modal.remove();
+            }
+        });
+
+        function checkPin(e) {
+            e.preventDefault();
+            const val = document.getElementById('pinInput').value;
+            if (val === SYSTEM_PIN) {
+                sessionStorage.setItem("ayan_oto_auth", "true");
+                const modal = document.getElementById('authModal');
+                if(modal) modal.remove();
+            } else {
+                const err = document.getElementById('pinError');
+                if(err) err.classList.remove('hidden');
+                document.getElementById('pinInput').value = '';
+            }
+        }
+    </script>
+</body>
+</html>
 </html>
