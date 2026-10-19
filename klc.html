@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>klc Petrol Ürünleri - Liste ve Fiyat Yönetimi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- SUPABASE JS KÜTÜPHANESİ -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            table { width: 100% !important; border-collapse: collapse !important; }
+            th, td { border: 1px solid #cbd5e1 !important; color: black !important; padding: 6px !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-amber-500 selection:text-slate-950">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-950/85 backdrop-blur-md sticky top-0 z-40 shadow-xl no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
+                    <i class="fa-solid fa-gas-pump text-slate-950 text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-xl font-bold tracking-tight text-white">klc PETROL ÜRÜNLERİ</h1>
+                    <p class="text-[10px] sm:text-xs text-amber-400 font-semibold tracking-wider uppercase">Canlı Fiyat ve Liste Yönetim Paneli</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <button onclick="printSelectedProducts()" class="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs sm:text-sm font-bold transition flex items-center space-x-2 shadow-lg shadow-sky-600/20 shrink-0">
+                    <i class="fa-solid fa-print"></i>
+                    <span>Seçilenleri Yazdır</span>
+                </button>
+                <button onclick="openManageModal()" class="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs sm:text-sm font-bold transition flex items-center space-x-2 shadow-lg shadow-amber-500/20 shrink-0">
+                    <i class="fa-solid fa-plus"></i>
+                    <span class="hidden sm:inline">Ürün Ekle / Yönet</span>
+                </button>
+                <button onclick="exportToCSV()" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 rounded-xl text-xs sm:text-sm font-medium transition flex items-center space-x-2 shadow-sm shrink-0">
+                    <i class="fa-solid fa-file-excel text-emerald-400"></i>
+                    <span class="hidden md:inline">Excel</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full space-y-6">
+
+        <!-- Search & Filters -->
+        <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 sm:p-6 backdrop-blur-sm shadow-xl space-y-4 no-print">
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                </span>
+                <input type="text" id="searchInput" oninput="renderTable()" placeholder="Ürün adı, viskozite (örn: 5W30) veya ürün kodu ile arayın..." 
+                    class="w-full pl-12 pr-4 py-3.5 bg-slate-950/80 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-base transition">
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
+                <div class="flex flex-wrap items-center gap-2" id="filterChips">
+                    <button onclick="setFilter('tumu', this)" class="filter-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 text-slate-950 transition shadow-sm">Tümü</button>
+                    <button onclick="setFilter('COKSATANLAR', this)" class="filter-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-amber-400 transition flex items-center gap-1.5"><i class="fa-solid fa-star"></i> Çok Satanlar</button>
+                    <button onclick="setFilter('5W30', this)" class="filter-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">5W30</button>
+                    <button onclick="setFilter('0W20', this)" class="filter-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">0W20</button>
+                    <button onclick="setFilter('10W40', this)" class="filter-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">10W40</button>
+                    <button onclick="setFilter('ANTİFRİZ', this)" class="filter-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Antifriz</button>
+                </div>
+
+                <div class="text-xs text-slate-400 font-medium" id="resultCount">
+                    Toplam <span id="countNum" class="text-amber-400 font-bold">0</span> ürün listeleniyor
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Table Card -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                    <thead>
+                        <tr class="bg-slate-950 text-slate-400 uppercase text-[10px] sm:text-xs border-b border-slate-800 tracking-wider">
+                            <th class="p-3.5 text-center no-print w-10">
+                                <input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)" class="rounded bg-slate-900 border-slate-700 text-amber-500 focus:ring-amber-500">
+                            </th>
+                            <th class="p-3.5 text-center w-10">⭐</th>
+                            <th class="p-3.5">Sıra</th>
+                            <th class="p-3.5">Ürün Kodu</th>
+                            <th class="p-3.5">Ürün Adı / Tanımı</th>
+                            <th class="p-3.5 text-center">Viskozite</th>
+                            <th class="p-3.5 text-center">Miktar / Birim</th>
+                            <th class="p-3.5 text-right text-amber-400">Alış Fiyatı (₺)</th>
+                            <th class="p-3.5 text-right text-emerald-400">Satış Fiyatı (₺)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-800/60"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-16 space-y-3">
+            <div class="w-16 h-16 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center mx-auto text-slate-500 text-2xl">
+                <i class="fa-solid fa-box-open"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-white">Ürün bulunamadı</h3>
+            <p class="text-sm text-slate-400">Arama kriterinize uygun ürün eşleşmedi.</p>
+        </div>
+    </main>
+
+    <!-- ÜRÜN EKLE / DÜZENLE / SİL MODALI -->
+    <div id="manageModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 md:p-6 overflow-y-auto no-print">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-5 md:p-8 shadow-2xl relative">
+            <div class="flex justify-between items-center pb-4 mb-5 border-b border-slate-800">
+                <h3 id="modalTitle" class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-box-archive text-amber-500"></i> Ürün Ekle / Güncelle / Sil</h3>
+                <button onclick="closeManageModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form id="productForm" onsubmit="handleProductSubmit(event)" class="space-y-4 text-xs">
+                <input type="hidden" id="editOriginalCode">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-bold uppercase text-slate-400 mb-1">Ürün Kodu *</label>
+                        <input type="text" id="pCode" required oninput="checkExistingProduct(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white" placeholder="Örn: 601215100">
+                    </div>
+                    <div>
+                        <label class="block font-bold uppercase text-slate-400 mb-1">Sıra No</label>
+                        <input type="text" id="pSira" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white" placeholder="Örn: 1">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block font-bold uppercase text-slate-400 mb-1">Ürün Adı *</label>
+                        <input type="text" id="pName" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white" placeholder="Örn: OPET FULLMAX">
+                    </div>
+                    <div>
+                        <label class="block font-bold uppercase text-slate-400 mb-1">Viskozite</label>
+                        <input type="text" id="pVisc" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white" placeholder="Örn: 5W30">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-bold uppercase text-slate-400 mb-1">Miktar</label>
+                            <input type="text" id="pMiktar" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white" placeholder="4.0">
+                        </div>
+                        <div>
+                            <label class="block font-bold uppercase text-slate-400 mb-1">Birim</label>
+                            <input type="text" id="pBirim" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white" placeholder="LİTRE">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-bold uppercase text-slate-400 mb-1 text-amber-400">Alış Fiyatı (₺)</label>
+                        <input type="number" step="0.01" id="pAlis" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white font-bold" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label class="block font-bold uppercase text-slate-400 mb-1 text-emerald-400">Satış Fiyatı (₺)</label>
+                        <input type="number" step="0.01" id="pSatis" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white font-bold" placeholder="0.00">
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button type="submit" class="flex-1 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl transition shadow-lg">Kaydet / Güncelle</button>
+                    <button type="button" id="deleteBtn" onclick="deleteCurrentProduct()" class="px-5 py-3 bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white font-bold rounded-xl transition hidden">Ürünü Sil</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- HİBRİT SUPABASE & YEREL MİMARİ -->
+    <script>
+        const SUPABASE_URL = 'https://plvkbyobxqyhxcaelmnl.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_GlkE-W8kD4h4PBxdwDH4ZA_t4Gtd5cK';
+
+        const initialProducts = [
+            {"siraNo": "25", "urunKodu": "YOK1", "viskozite": "-", "urunAdi": "MAVİ ANTİFRİZ", "miktar": "1.0", "birim": "LİTRE", "alisFiyati": 0.0, "satisFiyati": 0.0},
+            {"siraNo": "35", "urunKodu": "601216008", "viskozite": "-", "urunAdi": "OPET FULLTRAC 2 T", "miktar": "1.0", "birim": "LİTRE", "alisFiyati": 225.0, "satisFiyati": 0.0},
+            {"siraNo": "36", "urunKodu": "ST00088", "viskozite": "-", "urunAdi": "ATF DİREKSİYON YAĞI", "miktar": "1.0", "birim": "LİTRE", "alisFiyati": 145.0, "satisFiyati": 0.0},
+            {"siraNo": "23", "urunKodu": "YOK2", "viskozite": "-", "urunAdi": "KIRMIZI ANTİFRİZ", "miktar": "3.0", "birim": "LİTRE", "alisFiyati": 0.0, "satisFiyati": 0.0},
+            {"siraNo": "24", "urunKodu": "YOK4", "viskozite": "-", "urunAdi": "MAVİ ANTİFRİZ", "miktar": "3.0", "birim": "LİTRE", "alisFiyati": 0.0, "satisFiyati": 0.0},
+            {"siraNo": "13", "urunKodu": "YOK3", "viskozite": "5W30", "urunAdi": "OPET MULTİJET 1.3", "miktar": "3.2", "birim": "LİTRE", "alisFiyati": 1350.0, "satisFiyati": 0.0},
+            {"siraNo": "20", "urunKodu": "YOK5", "viskozite": "5W30", "urunAdi": "OPET FULLMAX TF-BD", "miktar": "3.2", "birim": "LİTRE", "alisFiyati": 0.0, "satisFiyati": 0.0},
+            {"siraNo": "6", "urunKodu": "601215100", "viskozite": "10W40", "urunAdi": "OPET FULLİFE S", "miktar": "4.0", "birim": "LİTRE", "alisFiyati": 1100.0, "satisFiyati": 0.0},
+            {"siraNo": "8", "urunKodu": "601215179", "viskozite": "20W50", "urunAdi": "OPET FULLİFE", "miktar": "4.0", "birim": "LİTRE", "alisFiyati": 980.0, "satisFiyati": 0.0},
+            {"siraNo": "12", "urunKodu": "YOK6", "viskozite": "0W20", "urunAdi": "OPET FULLTECH", "miktar": "4.0", "birim": "LİTRE", "alisFiyati": 1950.0, "satisFiyati": 0.0},
+            {"siraNo": "15", "urunKodu": "CCP2864", "viskozite": "10W40", "urunAdi": "CCP PURE SYNHETİC", "miktar": "4.0", "birim": "LİTRE", "alisFiyati": 850.0, "satisFiyati": 0.0},
+            {"siraNo": "17", "urunKodu": "ST00621", "viskozite": "5W30", "urunAdi": "OPET FULLMAX", "miktar": "4.0", "birim": "LİTRE", "alisFiyati": 1385.0, "satisFiyati": 0.0},
+            {"siraNo": "7", "urunKodu": "601370977", "viskozite": "5W30", "urunAdi": "OPET FULLİFE DPF", "miktar": "5.0", "birim": "LİTRE", "alisFiyati": 1700.0, "satisFiyati": 0.0},
+            {"siraNo": "10", "urunKodu": "ST00973", "viskozite": "0W20", "urunAdi": "OPET FULLMAX", "miktar": "5.0", "birim": "LİTRE", "alisFiyati": 2520.0, "satisFiyati": 0.0},
+            {"siraNo": "11", "urunKodu": "ST01201", "viskozite": "0W30", "urunAdi": "OPET FULLMAX", "miktar": "5.0", "birim": "LİTRE", "alisFiyati": 2650.0, "satisFiyati": 0.0},
+            {"siraNo": "9", "urunKodu": "602075208", "viskozite": "0W20", "urunAdi": "OPETFULLMAX", "miktar": "6.2", "birim": "LİTRE", "alisFiyati": 2650.0, "satisFiyati": 0.0},
+            {"siraNo": "1", "urunKodu": "601214882", "viskozite": "5W30", "urunAdi": "OPET FULLMAX", "miktar": "7.0", "birim": "LİTRE", "alisFiyati": 2380.0, "satisFiyati": 0.0},
+            {"siraNo": "2", "urunKodu": "YOK7", "viskozite": "10W30", "urunAdi": "OPET FULLMASTER", "miktar": "7.0", "birim": "LİTRE", "alisFiyati": 1680.0, "satisFiyati": 0.0},
+            {"siraNo": "3", "urunKodu": "YOK8", "viskozite": "15W40", "urunAdi": "OPET FULLMASTER", "miktar": "7.0", "birim": "LİTRE", "alisFiyati": 1620.0, "satisFiyati": 0.0},
+            {"siraNo": "18", "urunKodu": "YOK9", "viskozite": "0W20", "urunAdi": "OPET", "miktar": "7.0", "birim": "LİTRE", "alisFiyati": 0.0, "satisFiyati": 0.0},
+            {"siraNo": "4", "urunKodu": "YOK10", "viskozite": "5W30", "urunAdi": "OPET", "miktar": "10.5", "birim": "LİTRE", "alisFiyati": 3580.0, "satisFiyati": 0.0},
+            {"siraNo": "5", "urunKodu": "YOK11", "viskozite": "0W30", "urunAdi": "OPET", "miktar": "11.0", "birim": "LİTRE", "alisFiyati": 4430.0, "satisFiyati": 0.0},
+            {"siraNo": "14", "urunKodu": "ST00176", "viskozite": "20W50", "urunAdi": "OPET FULLMASTER", "miktar": "16.0", "birim": "LİTRE", "alisFiyati": 3550.0, "satisFiyati": 0.0},
+            {"siraNo": "16", "urunKodu": "YOK12", "viskozite": "20W50", "urunAdi": "CHARPOW", "miktar": "16.0", "birim": "LİTRE", "alisFiyati": 2500.0, "satisFiyati": 0.0},
+            {"siraNo": "22", "urunKodu": "YOK13", "viskozite": "20W50", "urunAdi": "OPET", "miktar": "16.0", "birim": "LİTRE", "alisFiyati": 0.0, "satisFiyati": 0.0},
+            {"siraNo": "21", "urunKodu": "YOK14", "viskozite": "15W40", "urunAdi": "OPET", "miktar": "18.0", "birim": "LİTRE", "alisFiyati": 0.0, "satisFiyati": 0.0},
+            {"siraNo": "37", "urunKodu": "ST01156", "viskozite": "-", "urunAdi": "SKALA DOT 4", "miktar": "500.0", "birim": "ML", "alisFiyati": 230.0, "satisFiyati": 0.0},
+            {"siraNo": "33", "urunKodu": "250220", "viskozite": "-", "urunAdi": "SKALA AKIŞMETRE TEMİZLEYİCİ SPREY", "miktar": "200.0", "birim": "ML", "alisFiyati": 320.0, "satisFiyati": 0.0},
+            {"siraNo": "30", "urunKodu": "250224", "viskozite": "-", "urunAdi": "SKALA SİLİKON SPREY", "miktar": "500.0", "birim": "ML", "alisFiyati": 380.0, "satisFiyati": 0.0},
+            {"siraNo": "31", "urunKodu": "250223", "viskozite": "-", "urunAdi": "SKALA SIVI GRES SPREY", "miktar": "500.0", "birim": "ML", "alisFiyati": 380.0, "satisFiyati": 0.0},
+            {"siraNo": "32", "urunKodu": "250803", "viskozite": "-", "urunAdi": "SKALA EGR VALF TEM. SPREY", "miktar": "500.0", "birim": "ML", "alisFiyati": 380.0, "satisFiyati": 0.0},
+            {"siraNo": "19", "urunKodu": "YOK15", "viskozite": "5W30", "urunAdi": "OPET FULLMAX RN", "miktar": "", "birim": "", "alisFiyati": 0.0, "satisFiyati": 0.0},
+            {"siraNo": "26", "urunKodu": "YOK16", "viskozite": "5W40", "urunAdi": "OPET LD", "miktar": "", "birim": "", "alisFiyati": 0.0, "satisFiyati": 0.0},
+            {"siraNo": "28", "urunKodu": "250210", "viskozite": "-", "urunAdi": "SKALA DUMAN KESİCİ KATKI", "miktar": "", "birim": "", "alisFiyati": 545.0, "satisFiyati": 0.0},
+            {"siraNo": "29", "urunKodu": "250200", "viskozite": "-", "urunAdi": "SKALA B5 HİDROJEN YAKIT KATKISI", "miktar": "", "birim": "", "alisFiyati": 550.0, "satisFiyati": 0.0},
+            {"siraNo": "34", "urunKodu": "ST00586", "viskozite": "-", "urunAdi": "SKALA PFTE PARTİKÜL FİLTRE TEM. SPREYİ", "miktar": "", "birim": "", "alisFiyati": 650.0, "satisFiyati": 0.0},
+            {"siraNo": "38", "urunKodu": "153023", "viskozite": "-", "urunAdi": "SKALA KILIF BASKISIZ 400/R", "miktar": "", "birim": "", "alisFiyati": 2400.0, "satisFiyati": 0.0},
+            {"siraNo": "39", "urunKodu": "ST00301", "viskozite": "20W50", "urunAdi": "PETROL OFİSİ", "miktar": "16.0", "birim": "LT TENEKE", "alisFiyati": 2900.0, "satisFiyati": 0.0},
+            {"siraNo": "40", "urunKodu": "ST00278", "viskozite": "20W50", "urunAdi": "CASTROL", "miktar": "16.0", "birim": "LT TENEKE", "alisFiyati": 3480.0, "satisFiyati": 0.0}
+        ];
+
+        window.allProducts = JSON.parse(localStorage.getItem('klc_local_products') || JSON.stringify(initialProducts));
+        window.starredItems = {};
+
+        document.addEventListener("DOMContentLoaded", async function() {
+            renderTable();
+
+            try {
+                if (window.supabase) {
+                    const { createClient } = window.supabase;
+                    const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    window._supabase = _supabase;
+
+                    let { data, error } = await _supabase.from('klc_petrol').select('*');
+                    if (!error && data && data.length > 0) {
+                        window.allProducts = data;
+                        localStorage.setItem('klc_local_products', JSON.stringify(data));
+                        renderTable();
+                    } else if (!error && (!data || data.length === 0)) {
+                        await _supabase.from('klc_petrol').upsert(initialProducts);
+                    }
+
+                    let { data: starData } = await _supabase.from('klc_coksatanlar').select('*');
+                    if (starData) {
+                        starData.forEach(s => { window.starredItems[s.urunKodu] = s.is_starred; });
+                        renderTable();
+                    }
+                }
+            } catch (err) {
+                console.log("Yerel mod aktif.");
+            }
+        });
+
+        async function saveToCloudAndLocal() {
+            localStorage.setItem('klc_local_products', JSON.stringify(window.allProducts));
+            if (window._supabase) {
+                try {
+                    await window._supabase.from('klc_petrol').upsert(window.allProducts);
+                } catch (e) {}
+            }
+        }
+
+        let activeFilter = 'tumu';
+
+        function setFilter(filter, btn) {
+            activeFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.className = 'filter-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition';
+            });
+            btn.className = 'filter-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 text-slate-950 transition shadow-sm';
+            renderTable();
+        }
+
+        async function updatePrice(code, type, value) {
+            const val = parseFloat(value) || 0;
+            const prod = window.allProducts.find(p => p.urunKodu === code);
+            if(prod) {
+                prod[type] = val;
+                await saveToCloudAndLocal();
+            }
+        }
+
+        function toggleSelectAll(master) {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(cb => cb.checked = master.checked);
+        }
+
+        function printSelectedProducts() {
+            const selected = document.querySelectorAll('.row-checkbox:checked');
+            if (selected.length === 0) {
+                alert('Lütfen yazdırmak için en az bir ürün seçin!');
+                return;
+            }
+            window.print();
+        }
+
+        function renderTable() {
+            const query = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+            const tbody = document.getElementById('tableBody');
+            const emptyState = document.getElementById('emptyState');
+            
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            const filtered = window.allProducts.filter(p => {
+                const matchQuery = 
+                    (p.urunAdi || '').toLowerCase().includes(query) || 
+                    (p.urunKodu || '').toLowerCase().includes(query) || 
+                    (p.viskozite || '').toLowerCase().includes(query) ||
+                    (p.siraNo && p.siraNo.toLowerCase().includes(query));
+
+                if (!matchQuery) return false;
+
+                if (activeFilter === 'tumu') return true;
+                if (activeFilter === 'COKSATANLAR') return window.starredItems[p.urunKodu];
+                if (activeFilter === 'ANTİFRİZ') return (p.urunAdi || '').toUpperCase().includes('ANTİFRİZ');
+                return (p.viskozite || '').toUpperCase().includes(activeFilter);
+            });
+
+            document.getElementById('countNum').innerText = filtered.length;
+
+            if (filtered.length === 0) {
+                if(emptyState) emptyState.classList.remove('hidden');
+            } else {
+                if(emptyState) emptyState.classList.add('hidden');
+                filtered.forEach(p => {
+                    const isStarred = window.starredItems[p.urunKodu] ? 'text-amber-400' : 'text-slate-600 hover:text-slate-400';
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-800/40 transition";
+                    
+                    tr.innerHTML = `
+                        <td class="p-3.5 text-center no-print">
+                            <input type="checkbox" value="${p.urunKodu}" class="row-checkbox rounded bg-slate-900 border-slate-700 text-amber-500 focus:ring-amber-500">
+                        </td>
+                        <td class="p-3.5 text-center cursor-pointer text-base ${isStarred}" onclick="window.toggleStarCloud('${p.urunKodu}')">
+                            <i class="fa-solid fa-star"></i>
+                        </td>
+                        <td class="p-3.5 font-mono text-slate-400 font-semibold">${p.siraNo || '-'}</td>
+                        <td class="p-3.5 font-mono font-bold text-amber-400">${p.urunKodu}</td>
+                        <td class="p-3.5 font-semibold text-white">${p.urunAdi}</td>
+                        <td class="p-3.5 text-center text-slate-300"><span class="bg-slate-800 px-2 py-0.5 rounded text-xs">${p.viskozite}</span></td>
+                        <td class="p-3.5 text-center text-slate-300 text-xs">${p.miktar || '-'} ${p.birim || ''}</td>
+                        <td class="p-3.5 text-right">
+                            <input type="number" step="0.01" value="${p.alisFiyati || ''}" placeholder="0.00" 
+                                onchange="updatePrice('${p.urunKodu}', 'alisFiyati', this.value)"
+                                class="w-24 sm:w-28 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-amber-400 font-bold focus:outline-none focus:border-amber-500 transition text-right">
+                        </td>
+                        <td class="p-3.5 text-right">
+                            <input type="number" step="0.01" value="${p.satisFiyati || ''}" placeholder="0.00" 
+                                onchange="updatePrice('${p.urunKodu}', 'satisFiyati', this.value)"
+                                class="w-24 sm:w-28 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-emerald-400 font-bold focus:outline-none focus:border-emerald-500 transition text-right">
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        async function toggleStarCloud(code) {
+            const status = window.starredItems[code] || false;
+            window.starredItems[code] = !status;
+            if (window._supabase) {
+                await window._supabase.from('klc_coksatanlar').upsert([{ urunKodu: code, is_starred: window.starredItems[code] }]);
+            }
+            renderTable();
+        }
+
+        function checkExistingProduct(codeVal) {
+            const cleanCode = codeVal.trim();
+            const found = window.allProducts.find(p => p.urunKodu === cleanCode);
+            const deleteBtn = document.getElementById('deleteBtn');
+            if(found) {
+                document.getElementById('editOriginalCode').value = found.urunKodu;
+                document.getElementById('pSira').value = found.siraNo || '';
+                document.getElementById('pName').value = found.urunAdi || '';
+                document.getElementById('pVisc').value = found.viskozite || '';
+                document.getElementById('pMiktar').value = found.miktar || '';
+                document.getElementById('pBirim').value = found.birim || '';
+                document.getElementById('pAlis').value = found.alisFiyati || '';
+                document.getElementById('pSatis').value = found.satisFiyati || '';
+                deleteBtn.classList.remove('hidden');
+            } else {
+                deleteBtn.classList.add('hidden');
+            }
+        }
+
+        function openManageModal() {
+            document.getElementById('productForm').reset();
+            document.getElementById('editOriginalCode').value = '';
+            document.getElementById('deleteBtn').classList.add('hidden');
+            document.getElementById('manageModal').classList.remove('hidden');
+        }
+
+        function closeManageModal() {
+            document.getElementById('manageModal').classList.add('hidden');
+        }
+
+        async function handleProductSubmit(e) {
+            e.preventDefault();
+            const oldCode = document.getElementById('editOriginalCode').value;
+            const newCode = document.getElementById('pCode').value.trim();
+
+            if (oldCode && oldCode !== newCode) {
+                await deleteProductFromCloudSilent(oldCode);
+            }
+
+            const prod = {
+                siraNo: document.getElementById('pSira').value.trim(),
+                urunKodu: newCode,
+                viskozite: document.getElementById('pVisc').value.trim() || '-',
+                urunAdi: document.getElementById('pName').value.trim(),
+                miktar: document.getElementById('pMiktar').value.trim(),
+                birim: document.getElementById('pBirim').value.trim(),
+                alisFiyati: parseFloat(document.getElementById('pAlis').value) || 0,
+                satisFiyati: parseFloat(document.getElementById('pSatis').value) || 0
+            };
+
+            const idx = window.allProducts.findIndex(p => p.urunKodu === prod.urunKodu);
+            if (idx !== -1) {
+                window.allProducts[idx] = prod;
+            } else {
+                window.allProducts.push(prod);
+            }
+
+            await saveToCloudAndLocal();
+            closeManageModal();
+            renderTable();
+        }
+
+        async function deleteProductFromCloudSilent(code) {
+            window.allProducts = window.allProducts.filter(p => p.urunKodu !== code);
+            localStorage.setItem('klc_local_products', JSON.stringify(window.allProducts));
+            if (window._supabase) {
+                await window._supabase.from('klc_petrol').delete().eq('urunKodu', code);
+            }
+        }
+
+        async function deleteCurrentProduct() {
+            const code = document.getElementById('pCode').value.trim();
+            if(code && confirm('Bu ürünü silmek istediğinize emin misiniz?')) {
+                await deleteProductFromCloudSilent(code);
+                closeManageModal();
+                renderTable();
+            }
+        }
+
+        function exportToCSV() {
+            let csv = '\uFEFFSıra No,Ürün Kodu,Viskozite,Ürün Adı,Miktar,Birim,Alış Fiyatı,Satış Fiyatı\n';
+            window.allProducts.forEach(p => {
+                csv += `"${p.siraNo || ''}","${p.urunKodu || ''}","${p.viskozite || ''}","${p.urunAdi || ''}","${p.miktar || ''}","${p.birim || ''}","${p.alisFiyati || 0}","${p.satisFiyati || 0}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'KLC_PERTOL_ÜRÜNLERİ.csv';
+            a.click();
+        }
+    </script>
+</body>
+</html>

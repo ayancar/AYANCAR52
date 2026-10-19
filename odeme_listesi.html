@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Çek & Senet Ödeme Takip Sistemi</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- SUPABASE JS KÜTÜPHANESİ -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #f8fafc; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Header / Navbar -->
+    <header class="bg-slate-900 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 p-2.5 rounded-lg text-white">
+                    <i class="fa-solid me-1 fa-file-invoice-dollar text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold leading-tight">Çek & Senet Ödeme Takibi</h1>
+                    <p class="text-xs text-slate-400">Finansal Kayıt ve Vade Yönetim Paneli - AYAN OTO ELEKTRİK</p>
+                </div>
+            </div>
+            <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center shadow-md transition-all">
+                <i class="fa-solid fa-plus mr-2"></i> Yeni Kayıt Ekle
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Summary KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Toplam Borç Tutarı</p>
+                <h3 id="kpi-total" class="text-2xl font-extrabold text-slate-900">₺0,00</h3>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <p class="text-xs font-semibold uppercase tracking-wider text-emerald-600 mb-1">Ödenen Tutar</p>
+                <h3 id="kpi-paid" class="text-2xl font-extrabold text-emerald-600">₺0,00</h3>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <p class="text-xs font-semibold uppercase tracking-wider text-amber-600 mb-1">Bekleyen Toplam</p>
+                <h3 id="kpi-pending" class="text-2xl font-extrabold text-amber-600">₺0,00</h3>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <p class="text-xs font-semibold uppercase tracking-wider text-blue-600 mb-1">Bekleyen Evrak Sayısı</p>
+                <h3 id="kpi-count" class="text-2xl font-extrabold text-blue-600">0</h3>
+            </div>
+        </div>
+
+        <!-- Filters & Search Bar -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
+            <div class="relative w-full md:w-96">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="searchInput" oninput="renderTable()" placeholder="Borçlu, Alacaklı veya Banka Ara..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <div class="flex items-center space-x-3 w-full md:w-auto justify-end">
+                <select id="statusFilter" onchange="renderTable()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    <option value="ALL">Tüm Durumlar</option>
+                    <option value="BEKLİYOR">Bekliyor</option>
+                    <option value="ÖDENDİ">Ödendi</option>
+                </select>
+
+                <select id="typeFilter" onchange="renderTable()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    <option value="ALL">Tüm Evrak Türleri</option>
+                    <option value="SENET">Senet</option>
+                    <option value="KART">Kart</option>
+                    <option value="ÇEK">Çek</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Data Table Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                            <th class="py-3.5 px-4">Sıra</th>
+                            <th class="py-3.5 px-4">Tür</th>
+                            <th class="py-3.5 px-4">Evrak No</th>
+                            <th class="py-3.5 px-4">Borçlu / Alacaklı</th>
+                            <th class="py-3.5 px-4">Banka / Şube</th>
+                            <th class="py-3.5 px-4">Keşide Tarihi</th>
+                            <th class="py-3.5 px-4">Vade Tarihi</th>
+                            <th class="py-3.5 px-4 text-right">Tutar</th>
+                            <th class="py-3.5 px-4 text-center">Kalan Gün</th>
+                            <th class="py-3.5 px-4 text-center">Durum</th>
+                            <th class="py-3.5 px-4 text-center">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-200 text-sm">
+                        <!-- JS ile Dinamik Doldurulacak -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Form (Ekle / Düzenle) -->
+    <div id="recordModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200">
+            <div class="bg-slate-900 px-6 py-4 flex justify-between items-center text-white">
+                <h3 id="modalTitle" class="font-bold text-lg">Yeni Evrak Kaydı Ekle</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+            </div>
+            
+            <form id="recordForm" onsubmit="saveRecord(event)" class="p-6 space-y-4">
+                <input type="hidden" id="editId" value="">
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Evrak Türü</label>
+                        <select id="formType" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" required>
+                            <option value="SENET">SENET</option>
+                            <option value="KART">KART</option>
+                            <option value="ÇEK">ÇEK</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Evrak No</label>
+                        <input type="text" id="formDocNo" placeholder="örn: 2220-20159" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Borçlu / Alacaklı</label>
+                    <input type="text" id="formParty" placeholder="Firma / Şahıs Adı" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" required>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Banka / Şube</label>
+                    <input type="text" id="formBank" placeholder="Banka Adı" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Keşide Tarihi</label>
+                        <input type="date" id="formIssueDate" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Vade Tarihi</label>
+                        <input type="date" id="formDueDate" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Tutar (₺)</label>
+                        <input type="number" step="0.01" id="formAmount" placeholder="0.00" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Durumu</label>
+                        <select id="formStatus" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="BEKLİYOR">BEKLİYOR</option>
+                            <option value="ÖDENDİ">ÖDENDİ</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-200">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 hover:bg-slate-100 font-medium">İptal</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SUPABASE VE UYGULAMA MİMARİSİ -->
+    <script>
+        const SUPABASE_URL = 'https://plvkbyobxqyhxcaelmnl.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_GlkE-W8kD4h4PBxdwDH4ZA_t4Gtd5cK';
+
+        const defaultRecords = [
+            { id: 1, type: "SENET", docNo: "-", party: "KAROTO", bank: "DENİZBANK", issueDate: "2026-06-25", dueDate: "2026-06-25", amount: 75000, status: "ÖDENDİ" },
+            { id: 2, type: "SENET", docNo: "-", party: "ŞENAY OTO", bank: "ZİRAATBANK", issueDate: "2026-06-30", dueDate: "2026-06-30", amount: 25000, status: "ÖDENDİ" },
+            { id: 3, type: "SENET", docNo: "-", party: "KAROTO", bank: "DENİZBANK", issueDate: "2026-07-25", dueDate: "2026-07-25", amount: 75000, status: "ÖDENDİ" },
+            { id: 4, type: "SENET", docNo: "65493", party: "ŞENAY OTO", bank: "ZİRAATBANK", issueDate: "2026-07-31", dueDate: "2026-07-31", amount: 25000, status: "ÖDENDİ" },
+            { id: 5, type: "SENET", docNo: "2220-20159", party: "KAROTO", bank: "DENİZBANK", issueDate: "2026-06-12", dueDate: "2026-08-15", amount: 75000, status: "ÖDENDİ" },
+            { id: 6, type: "SENET", docNo: "-", party: "KAROTO", bank: "DENİZBANK", issueDate: "2026-05-19", dueDate: "2026-08-30", amount: 15000, status: "ÖDENDİ" },
+            { id: 7, type: "SENET", docNo: "2220-20160", party: "KAROTO", bank: "DENİZBANK", issueDate: "2026-06-12", dueDate: "2026-09-15", amount: 75000, status: "ÖDENDİ" },
+            { id: 8, type: "SENET", docNo: "-", party: "ŞENAY OTO", bank: "ZİRAATBANK", issueDate: "2026-06-24", dueDate: "2026-09-30", amount: 25000, status: "ÖDENDİ" },
+            { id: 9, type: "SENET", docNo: "-", party: "VOLKAN AKÜ", bank: "-", issueDate: "2026-09-18", dueDate: "2026-09-30", amount: 100000, status: "ÖDENDİ" },
+            { id: 10, type: "SENET", docNo: "-", party: "KAROTO", bank: "DENİZBANK", issueDate: "2026-08-11", dueDate: "2026-10-15", amount: 100000, status: "BEKLİYOR" },
+            { id: 11, type: "KART", docNo: "-", party: "KAROTO", bank: "-", issueDate: "-", dueDate: "2026-10-17", amount: 42334, status: "BEKLİYOR" },
+            { id: 12, type: "SENET", docNo: "-", party: "ŞENAY OTO", bank: "ZİRAATBANK", issueDate: "2026-06-24", dueDate: "2026-10-31", amount: 25000, status: "BEKLİYOR" },
+            { id: 13, type: "SENET", docNo: "-", party: "VOLKAN AKÜ", bank: "-", issueDate: "-", dueDate: "2026-10-31", amount: 100000, status: "BEKLİYOR" },
+            { id: 14, type: "SENET", docNo: "-", party: "KAROTO", bank: "DENİZBANK", issueDate: "2026-08-11", dueDate: "2026-11-15", amount: 100000, status: "BEKLİYOR" },
+            { id: 15, type: "KART", docNo: "-", party: "VOLKAN AKÜ", bank: "-", issueDate: "-", dueDate: "2026-11-30", amount: 100000, status: "BEKLİYOR" },
+            { id: 16, type: "SENET", docNo: "-", party: "ŞENAY OTOMOTİV", bank: "ZİRAATBANK", issueDate: "2026-09-25", dueDate: "2026-12-31", amount: 30000, status: "BEKLİYOR" },
+            { id: 17, type: "KART", docNo: "-", party: "VOLKAN AKÜ", bank: "-", issueDate: "-", dueDate: "2026-12-31", amount: 100000, status: "BEKLİYOR" },
+            { id: 18, type: "SENET", docNo: "-", party: "ŞENAY OTOMOTİV", bank: "ZİRAATBANK", issueDate: "2026-09-26", dueDate: "2027-01-31", amount: 30000, status: "BEKLİYOR" },
+            { id: 19, type: "KART", docNo: "-", party: "VOLKAN AKÜ", bank: "-", issueDate: "-", dueDate: "2027-01-31", amount: 125000, status: "BEKLİYOR" },
+            { id: 20, type: "KART", docNo: "-", party: "İŞ BANKASI ÖDEMESİ", bank: "İŞ BANKASI", issueDate: "-", dueDate: "2026-10-26", amount: 0, status: "BEKLİYOR" },
+            { id: 21, type: "KART", docNo: "-", party: "İŞ BANKASI ÖDEMESİ", bank: "İŞ BANKASI", issueDate: "-", dueDate: "2026-11-26", amount: 0, status: "BEKLİYOR" },
+            { id: 22, type: "KART", docNo: "-", party: "İŞ BANKASI ÖDEMESİ", bank: "İŞ BANKASI", issueDate: "-", dueDate: "2026-12-26", amount: 0, status: "BEKLİYOR" },
+            { id: 23, type: "KART", docNo: "-", party: "İŞ BANKASI ÖDEMESİ", bank: "İŞ BANKASI", issueDate: "-", dueDate: "2027-01-26", amount: 0, status: "BEKLİYOR" },
+            { id: 24, type: "KART", docNo: "-", party: "İŞ BANKASI ÖDEMESİ", bank: "İŞ BANKASI", issueDate: "-", dueDate: "2027-02-26", amount: 0, status: "BEKLİYOR" },
+            { id: 25, type: "KART", docNo: "-", party: "İŞ BANKASI ÖDEMESİ", bank: "İŞ BANKASI", issueDate: "-", dueDate: "2027-03-26", amount: 0, status: "BEKLİYOR" },
+            { id: 26, type: "KART", docNo: "-", party: "İŞ BANKASI ÖDEMESİ", bank: "İŞ BANKASI", issueDate: "-", dueDate: "2027-04-26", amount: 0, status: "BEKLİYOR" },
+            { id: 27, type: "KART", docNo: "-", party: "İŞ BANKASI ÖDEMESİ", bank: "İŞ BANKASI", issueDate: "-", dueDate: "2027-05-26", amount: 0, status: "BEKLİYOR" }
+        ];
+
+        window.records = JSON.parse(localStorage.getItem('cekSenetRecords') || JSON.stringify(defaultRecords));
+
+        document.addEventListener("DOMContentLoaded", async function() {
+            renderTable();
+
+            try {
+                if (window.supabase) {
+                    const { createClient } = window.supabase;
+                    const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    window._supabase = _supabase;
+
+                    let { data, error } = await _supabase.from('odeme_listesi').select('*');
+                    if (!error && data && data.length > 0) {
+                        window.records = data;
+                        localStorage.setItem('cekSenetRecords', JSON.stringify(data));
+                        renderTable();
+                    } else if (!error && (!data || data.length === 0)) {
+                        // Tablo boşsa başlangıç verilerini yükleyelim
+                        await _supabase.from('odeme_listesi').upsert(defaultRecords);
+                    }
+                }
+            } catch (err) {
+                console.log("Supabase çevrimdışı/yerel mod aktif.");
+            }
+        });
+
+        async function saveToCloudAndLocal() {
+            localStorage.setItem('cekSenetRecords', JSON.stringify(window.records));
+            if (window._supabase) {
+                try {
+                    await window._supabase.from('odeme_listesi').upsert(window.records);
+                } catch (e) {
+                    console.log("Bulut kaydı arka planda güncellenecek.");
+                }
+            }
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        function calculateRemainingDays(dueDateStr) {
+            if (!dueDateStr || dueDateStr === '-') return '-';
+            const dueDate = new Date(dueDateStr);
+            dueDate.setHours(0, 0, 0, 0);
+            const diffTime = dueDate - today;
+            return Math.round(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr || dateStr === '-') return '-';
+            const [y, m, d] = dateStr.split('-');
+            return `${d}.${m}.${y}`;
+        }
+
+        function updateKPIs() {
+            let total = 0, paid = 0, pending = 0, pendingCount = 0;
+
+            window.records.forEach(r => {
+                total += parseFloat(r.amount) || 0;
+                if (r.status === 'ÖDENDİ') {
+                    paid += parseFloat(r.amount) || 0;
+                } else {
+                    pending += parseFloat(r.amount) || 0;
+                    pendingCount++;
+                }
+            });
+
+            document.getElementById('kpi-total').textContent = formatCurrency(total);
+            document.getElementById('kpi-paid').textContent = formatCurrency(paid);
+            document.getElementById('kpi-pending').textContent = formatCurrency(pending);
+            document.getElementById('kpi-count').textContent = pendingCount;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            const searchVal = (document.getElementById('searchInput')?.value || '').toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            const filtered = (window.records || []).filter(r => {
+                const matchesSearch = (r.party || '').toLowerCase().includes(searchVal) || 
+                                      (r.bank || '').toLowerCase().includes(searchVal) || 
+                                      (r.docNo || '').toLowerCase().includes(searchVal);
+                const matchesStatus = statusFilter === 'ALL' || r.status === statusFilter;
+                const matchesType = typeFilter === 'ALL' || r.type === typeFilter;
+                return matchesSearch && matchesStatus && matchesType;
+            });
+
+            filtered.forEach((r) => {
+                const days = calculateRemainingDays(r.dueDate);
+                let dayBadge = '';
+                if (days !== '-') {
+                    if (days < 0) {
+                        dayBadge = `<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-medium text-xs">${Math.abs(days)} gün geçti (Vadesi doldu)</span>`;
+                    } else if (days === 0) {
+                        dayBadge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-medium text-xs">Bugün</span>`;
+                    } else if (days <= 15) {
+                        dayBadge = `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-medium text-xs">${days} gün kaldı</span>`;
+                    } else {
+                        dayBadge = `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium text-xs">${days} gün kaldı</span>`;
+                    }
+                } else {
+                    dayBadge = '-';
+                }
+
+                const statusBadge = r.status === 'ÖDENDİ' 
+                    ? `<span class="bg-emerald-600 text-white font-bold px-2.5 py-1 rounded-full text-xs shadow-sm">ÖDENDİ</span>`
+                    : `<span class="bg-amber-100 text-amber-800 font-semibold px-2.5 py-1 rounded-full text-xs">BEKLİYOR</span>`;
+
+                const rowBgClass = r.status === 'ÖDENDİ' ? 'bg-emerald-100/60 hover:bg-emerald-200/60' : 'hover:bg-slate-50';
+
+                const tr = document.createElement('tr');
+                tr.className = `${rowBgClass} border-b border-slate-200 transition-colors`;
+                tr.innerHTML = `
+                    <td class="py-3 px-4 text-slate-600 font-medium">${r.id}</td>
+                    <td class="py-3 px-4 font-semibold text-xs text-slate-700">${r.type}</td>
+                    <td class="py-3 px-4 text-slate-700">${r.docNo}</td>
+                    <td class="py-3 px-4 font-medium text-slate-900">${r.party}</td>
+                    <td class="py-3 px-4 text-slate-700">${r.bank}</td>
+                    <td class="py-3 px-4 text-slate-600 text-xs">${formatDate(r.issueDate)}</td>
+                    <td class="py-3 px-4 font-medium text-xs text-slate-800">${formatDate(r.dueDate)}</td>
+                    <td class="py-3 px-4 text-right font-bold text-slate-900">${formatCurrency(r.amount)}</td>
+                    <td class="py-3 px-4 text-center">${dayBadge}</td>
+                    <td class="py-3 px-4 text-center">${statusBadge}</td>
+                    <td class="py-3 px-4 text-center space-x-1">
+                        <button onclick="toggleStatus(${r.id})" title="Durum Değiştir" class="p-1.5 text-slate-600 hover:text-emerald-700 rounded">
+                            <i class="fa-solid fa-arrow-rotate-left"></i>
+                        </button>
+                        <button onclick="editRecord(${r.id})" title="Düzenle" class="p-1.5 text-slate-600 hover:text-blue-700 rounded">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button onclick="deleteRecord(${r.id})" title="Sil" class="p-1.5 text-slate-600 hover:text-red-700 rounded">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            updateKPIs();
+        }
+
+        async function toggleStatus(id) {
+            const idx = window.records.findIndex(r => r.id === id);
+            if (idx !== -1) {
+                window.records[idx].status = window.records[idx].status === 'ÖDENDİ' ? 'BEKLİYOR' : 'ÖDENDİ';
+                await saveToCloudAndLocal();
+                renderTable();
+            }
+        }
+
+        function openModal() {
+            document.getElementById('modalTitle').textContent = 'Yeni Evrak Kaydı Ekle';
+            document.getElementById('editId').value = '';
+            document.getElementById('recordForm').reset();
+            document.getElementById('recordModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('recordModal').classList.add('hidden');
+        }
+
+        function editRecord(id) {
+            const item = window.records.find(r => r.id === id);
+            if (!item) return;
+
+            document.getElementById('modalTitle').textContent = 'Evrak Kaydını Düzenle';
+            document.getElementById('editId').value = id;
+            document.getElementById('formType').value = item.type;
+            document.getElementById('formDocNo').value = item.docNo === '-' ? '' : item.docNo;
+            document.getElementById('formParty').value = item.party;
+            document.getElementById('formBank').value = item.bank === '-' ? '' : item.bank;
+            document.getElementById('formIssueDate').value = item.issueDate === '-' ? '' : item.issueDate;
+            document.getElementById('formDueDate').value = item.dueDate === '-' ? '' : item.dueDate;
+            document.getElementById('formAmount').value = item.amount;
+            document.getElementById('formStatus').value = item.status;
+
+            document.getElementById('recordModal').classList.remove('hidden');
+        }
+
+        async function saveRecord(e) {
+            e.preventDefault();
+
+            const editIdVal = document.getElementById('editId').value;
+            const type = document.getElementById('formType').value;
+            const docNo = document.getElementById('formDocNo').value || '-';
+            const party = document.getElementById('formParty').value;
+            const bank = document.getElementById('formBank').value || '-';
+            const issueDate = document.getElementById('formIssueDate').value || '-';
+            const dueDate = document.getElementById('formDueDate').value || '-';
+            const amount = parseFloat(document.getElementById('formAmount').value) || 0;
+            const status = document.getElementById('formStatus').value;
+
+            if (!editIdVal) {
+                const newId = window.records.length > 0 ? Math.max(...window.records.map(r => r.id)) + 1 : 1;
+                window.records.push({ id: newId, type, docNo, party, bank, issueDate, dueDate, amount, status });
+            } else {
+                const idNum = parseInt(editIdVal);
+                const idx = window.records.findIndex(r => r.id === idNum);
+                if (idx !== -1) {
+                    window.records[idx] = { id: idNum, type, docNo, party, bank, issueDate, dueDate, amount, status };
+                }
+            }
+
+            await saveToCloudAndLocal();
+            closeModal();
+            renderTable();
+        }
+
+        async function deleteRecord(id) {
+            if (confirm('Bu kaydı silmek istediğinize emin misiniz?')) {
+                window.records = window.records.filter(r => r.id !== id);
+                await saveToCloudAndLocal();
+                if (window._supabase) {
+                    await window._supabase.from('odeme_listesi').delete().eq('id', id);
+                }
+                renderTable();
+            }
+        }
+    </script>
+</body>
+</html>
