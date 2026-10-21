@@ -65,6 +65,7 @@
                         <tr class="bg-zinc-950 text-zinc-400 uppercase text-[10px] border-b border-zinc-800">
                             <th class="p-3 w-10 text-center">⭐</th>
                             <th class="p-3">Akü Kodu</th>
+                            <th class="p-3">Bulunduğu Sekme (Kategori)</th>
                             <th class="p-3">Akü Tipi / Tanımı</th>
                             <th class="p-3 text-center">CCA</th>
                             <th class="p-3 text-center">Ölçüler (B-E-Y)</th>
@@ -167,11 +168,11 @@
 
         const defaultData = [
             { category: "AGM Aküler", code: "25502450", type: "12V 50 Ah L1 DÜZ MF", cca: "480", length: "207", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "5.790,00 TL", iskonto: "4.921,50 TL", net: "5.905,80 TL", satis: "7.000,00 TL" },
-            { category: "AGM Aküler", code: "25602741", type: "12V 60 Ah L2 DÜZ MF", cca: "680", length: "242", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "6.915,00 TL", iskonto: "5.877,75 TL", net: "7.053,30 TL", satis: "8.000,00 TL" },
+            { category: "AGM Aküler", code: "25602741", type: "12V 60 Ah AGM L2 DÜZ MF", cca: "680", length: "242", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "6.915,00 TL", iskonto: "5.877,75 TL", net: "7.053,30 TL", satis: "8.000,00 TL" },
             { category: "AGM Aküler", code: "25702588", type: "12V 70 Ah L3 DÜZ MF", cca: "760", length: "278", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "8.035,00 TL", iskonto: "6.829,75 TL", net: "8.195,70 TL", satis: "9.500,00 TL" },
             { category: "AGM Aküler", code: "25802407", type: "12V 80 Ah L4 DÜZ MF", cca: "800", length: "315", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "9.160,00 TL", iskonto: "7.786,00 TL", net: "9.343,20 TL", satis: "10.500,00 TL" },
             { category: "AGM Aküler", code: "25952065", type: "12V 95 Ah L5 DÜZ MF", cca: "850", length: "353", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "10.285,00 TL", iskonto: "8.742,25 TL", net: "10.490,70 TL", satis: "11.500,00 TL" },
-            { category: "AGM Aküler", code: "26052138", type: "12V 105 Ah L6 DÜZ MF", cca: "950", length: "392", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "11.405,00 TL", iskonto: "9.694,25 TL", net: "11.633,10 TL", satis: "12.700,00 TL" },
+            { category: "AGM Aküler", code: "26052138", type: "12V 105 Ah AGM L6 DÜZ MF", cca: "950", length: "392", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "", haric: "11.405,00 TL", iskonto: "9.694,25 TL", net: "11.633,10 TL", satis: "12.700,00 TL" },
             { category: "EFB Start-Stop", code: "25502629", type: "12V 50 Ah L1 DÜZ SMF", cca: "540", length: "207", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB", haric: "4.160,00 TL", iskonto: "3.536,00 TL", net: "4.243,20 TL", satis: "5.500,00 TL" },
             { category: "EFB Start-Stop", code: "25632067", type: "12V 63 Ah L2 DÜZ MF", cca: "640", length: "242", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB", haric: "4.665,00 TL", iskonto: "3.965,25 TL", net: "4.758,30 TL", satis: "6.000,00 TL" },
             { category: "EFB Start-Stop", code: "25722112", type: "12V 72 Ah L3 DÜZ MF", cca: "760", length: "278", width: "175", height: "190", pervaz: "Tüm Kenar Tırnaklı", desc: "EFB", haric: "5.340,00 TL", iskonto: "4.539,00 TL", net: "5.446,80 TL", satis: "6.500,00 TL" },
@@ -262,14 +263,12 @@
                     const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                     window._supabase = _supabase;
 
-                    // 1. Ürün verilerini çek
                     let { data: prodData, error: prodErr } = await _supabase.from('yigit_aku').select('*');
                     if (!prodErr && prodData && prodData.length > 0) {
                         window.batteryData = prodData;
                         localStorage.setItem('yigit_local_data', JSON.stringify(prodData));
                     }
 
-                    // 2. Yıldız/Çok Satanlar verilerini çek ve birleştir
                     let { data: starData } = await _supabase.from('yigit_coksatanlar').select('*');
                     if (starData && starData.length > 0) {
                         starData.forEach(s => { 
@@ -321,7 +320,7 @@
             document.getElementById('productCountBadge').textContent = filtered.length;
 
             if (filtered.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-zinc-500">Ürün bulunamadı.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-zinc-500">Ürün bulunamadı.</td></tr>`;
                 return;
             }
 
@@ -329,6 +328,7 @@
                 <tr class="hover:bg-zinc-800/40 transition">
                     <td class="p-3 text-center cursor-pointer text-base ${window.starredItems[item.code] ? 'text-amber-400' : 'text-zinc-700'}" onclick="toggleStarCloud('${item.code}')">★</td>
                     <td class="p-3 font-mono font-bold text-red-400">${item.code || ''}</td>
+                    <td class="p-3"><span class="bg-zinc-800 text-zinc-300 px-2 py-1 rounded-lg text-[10px] font-semibold">${item.category || ''}</span></td>
                     <td class="p-3 font-semibold text-white">${item.type || ''}</td>
                     <td class="p-3 text-center text-zinc-300">${item.cca || '-'}</td>
                     <td class="p-3 text-center text-zinc-400 text-[11px]">${item.length || ''}x${item.width || ''}x${item.height || ''}</td>
@@ -341,24 +341,17 @@
             `).join('');
         }
 
-        // Yıldızlama işlemi
         async function toggleStarCloud(code) {
             const currentStatus = !!window.starredItems[code];
             window.starredItems[code] = !currentStatus;
             
-            // Yerel hafızaya kaydet
             localStorage.setItem('yigit_starred_items', JSON.stringify(window.starredItems));
-
-            // Ekrana anında yansıt
             filterData();
 
-            // Supabase bulutuna kaydet
             if (window._supabase) {
                 try {
                     await window._supabase.from('yigit_coksatanlar').upsert([{ code: code, is_starred: window.starredItems[code] }]);
-                } catch(e) {
-                    console.log("Supabase yıldız senkronizasyon hatası:", e);
-                }
+                } catch(e) {}
             }
         }
 

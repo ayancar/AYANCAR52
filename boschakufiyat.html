@@ -64,6 +64,7 @@
                         <tr class="bg-[#0b1329] text-blue-300 uppercase text-[10px] border-b border-blue-950">
                             <th class="p-3 w-10 text-center">⭐</th>
                             <th class="p-3">Akü Kodu</th>
+                            <th class="p-3">Bulunduğu Sekme (Kategori)</th>
                             <th class="p-3">Akü Tipi / Tanımı</th>
                             <th class="p-3 text-center">Ah</th>
                             <th class="p-3 text-center">CCA</th>
@@ -249,7 +250,6 @@
                         await _supabase.from('bosch_aku').upsert(defaultBoschData);
                     }
 
-                    // Çok satanlar / yıldızlar tablosu
                     let { data: starData } = await _supabase.from('bosch_coksatanlar').select('*');
                     if (starData) {
                         starData.forEach(s => { window.starredItems[s.code] = s.is_starred; });
@@ -298,7 +298,7 @@
             document.getElementById('productCountBadge').textContent = filtered.length;
 
             if (filtered.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-blue-300/50">Ürün bulunamadı.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-blue-300/50">Ürün bulunamadı.</td></tr>`;
                 return;
             }
 
@@ -306,6 +306,7 @@
                 <tr class="hover:bg-blue-950/30 transition">
                     <td class="p-3 text-center cursor-pointer text-base ${window.starredItems[item.code] ? 'text-amber-400' : 'text-blue-900'}" onclick="window.toggleStarCloud('${item.code}')">★</td>
                     <td class="p-3 font-mono font-bold text-sky-400">${item.code || ''}</td>
+                    <td class="p-3"><span class="bg-blue-950/60 text-blue-300 border border-blue-900/50 px-2 py-1 rounded-lg text-[10px] font-semibold">${item.category || ''}</span></td>
                     <td class="p-3 font-semibold text-slate-100">${item.type || ''}</td>
                     <td class="p-3 text-center text-blue-200/80">${item.ah || '-'} Ah</td>
                     <td class="p-3 text-center text-blue-300/70">${item.cca || '-'}</td>
