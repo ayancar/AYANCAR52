@@ -77,48 +77,80 @@
                 <form id="serviceForm" onsubmit="handleFormSubmit(event)" class="space-y-6">
                     <input type="hidden" id="editingRecordIdInput" value="">
                     
-                    <!-- Müşteri ve Araç Bilgileri -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Müşteri Adı Soyadı *</label>
-                            <input type="text" id="custName" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="Örn: Ender Korgan">
+                    <!-- 3 SÜTUNLU YENİ DÜZEN -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        
+                        <!-- 1. BÖLÜM: MÜŞTERİ BİLGİLERİ -->
+                        <div class="space-y-4 bg-zinc-950/60 p-4 rounded-2xl border border-zinc-800/80 flex flex-col justify-between">
+                            <h3 class="text-xs font-bold text-red-500 uppercase tracking-wider border-b border-zinc-800 pb-2">
+                                <i class="fa-solid fa-user mr-1"></i> Müşteri Bilgileri
+                            </h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Müşteri Adı Soyadı *</label>
+                                    <input type="text" id="custName" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="Örn: Ender Korgan">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Müşteri Telefon *</label>
+                                    <input type="tel" id="custPhone" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="05XX XXX XX XX">
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Müşteri Telefon *</label>
-                            <input type="tel" id="custPhone" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="05XX XXX XX XX">
+
+                        <!-- 2. BÖLÜM: FATURA & İLETİŞİM -->
+                        <div class="space-y-4 bg-zinc-950/60 p-4 rounded-2xl border border-zinc-800/80 flex flex-col justify-between">
+                            <h3 class="text-xs font-bold text-red-500 uppercase tracking-wider border-b border-zinc-800 pb-2">
+                                <i class="fa-solid fa-file-invoice mr-1"></i> Fatura & İletişim
+                            </h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">TCKN / Vergi No</label>
+                                    <input type="text" id="custTaxNo" maxlength="11" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="TCKN veya Vergi No">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Vergi Dairesi</label>
+                                    <input type="text" id="custTaxOffice" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="Örn: Fatsa V.D.">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">E-Posta Adresi</label>
+                                    <input type="email" id="custEmail" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="ornek@mail.com">
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">E-Posta Adresi</label>
-                            <input type="email" id="custEmail" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="ornek@mail.com">
+
+                        <!-- 3. BÖLÜM: ARAÇ & SERVİS BİLGİLERİ -->
+                        <div class="space-y-4 bg-zinc-950/60 p-4 rounded-2xl border border-zinc-800/80">
+                            <h3 class="text-xs font-bold text-red-500 uppercase tracking-wider border-b border-zinc-800 pb-2">
+                                <i class="fa-solid fa-car mr-1"></i> Araç & Servis Bilgileri
+                            </h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Aracın Plakası *</label>
+                                    <input type="text" id="carPlate" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white uppercase focus:outline-none focus:border-red-600" placeholder="52 AB 123">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Marka / Model *</label>
+                                    <input type="text" id="carBrand" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="Örn: Ford / Fiat">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Geliş Tarihi</label>
+                                        <input type="date" id="dateArrival" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-2 py-2.5 text-xs text-white focus:outline-none focus:border-red-600">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Teslim Tarihi</label>
+                                        <input type="date" id="dateDelivery" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-2 py-2.5 text-xs text-white focus:outline-none focus:border-red-600">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">TCKN / Vergi No</label>
-                            <input type="text" id="custTaxNo" maxlength="11" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="TCKN veya Vergi No">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Vergi Dairesi</label>
-                            <input type="text" id="custTaxOffice" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="Örn: Fatsa V.D.">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Aracın Plakası *</label>
-                            <input type="text" id="carPlate" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white uppercase focus:outline-none focus:border-red-600" placeholder="52 AB 123">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Marka / Model *</label>
-                            <input type="text" id="carBrand" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="Örn: Ford / Fiat">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Geliş Tarihi</label>
-                            <input type="date" id="dateArrival" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Teslim Tarihi</label>
-                            <input type="date" id="dateDelivery" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600">
-                        </div>
-                        <div class="md:col-span-2 lg:col-span-3">
+
+                        <!-- AÇIK ADRES (MÜŞTERİ VE FATURA BÖLÜMLERİNİN EN ALTINA UZATILDI) -->
+                        <div class="md:col-span-2 bg-zinc-950/60 p-4 rounded-2xl border border-zinc-800/80">
                             <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Müşteri Açık Adresi</label>
                             <input type="text" id="custAddress" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="Müşteri açık adresi...">
                         </div>
+
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
