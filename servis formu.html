@@ -76,6 +76,8 @@
 
                 <form id="serviceForm" onsubmit="handleFormSubmit(event)" class="space-y-6">
                     <input type="hidden" id="editingRecordIdInput" value="">
+                    
+                    <!-- Müşteri ve Araç Bilgileri -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Müşteri Adı Soyadı *</label>
@@ -84,6 +86,18 @@
                         <div>
                             <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Müşteri Telefon *</label>
                             <input type="tel" id="custPhone" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="05XX XXX XX XX">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">E-Posta Adresi</label>
+                            <input type="email" id="custEmail" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="ornek@mail.com">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">TCKN / Vergi No</label>
+                            <input type="text" id="custTaxNo" maxlength="11" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="TCKN veya Vergi No">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Vergi Dairesi</label>
+                            <input type="text" id="custTaxOffice" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="Örn: Fatsa V.D.">
                         </div>
                         <div>
                             <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Aracın Plakası *</label>
@@ -102,8 +116,8 @@
                             <input type="date" id="dateDelivery" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600">
                         </div>
                         <div class="md:col-span-2 lg:col-span-3">
-                            <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Müşteri Adresi / Vergi Bilgisi</label>
-                            <input type="text" id="custAddress" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="Müşteri adresi veya Vergi Dairesi/TCKN bilgi...">
+                            <label class="block text-[11px] font-bold uppercase text-zinc-400 mb-1">Müşteri Açık Adresi</label>
+                            <input type="text" id="custAddress" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-600" placeholder="Müşteri açık adresi...">
                         </div>
                     </div>
 
@@ -179,7 +193,7 @@
                     </div>
                 </div>
                 <div class="mb-6">
-                    <input type="text" id="searchInput" oninput="renderRecordsList()" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-red-600" placeholder="Plaka, Müşteri Adı veya Telefon aratın...">
+                    <input type="text" id="searchInput" oninput="renderRecordsList()" class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-red-600" placeholder="Plaka, Müşteri Adı, Telefon veya TC/Vergi No aratın...">
                 </div>
                 <div id="recordsContainer" class="space-y-3"></div>
             </div>
@@ -223,13 +237,16 @@
                     </div>
                 </div>
 
-                <!-- Müşteri ve Araç Bilgileri -->
+                <!-- Müşteri (Sol) ve Araç (Sağ) Bilgileri -->
                 <div class="grid grid-cols-2 gap-3 border border-zinc-300 rounded-xl p-3 bg-zinc-50">
                     <div>
                         <div class="font-bold text-zinc-900 border-b border-zinc-200 pb-0.5 mb-1">SAYIN / MÜŞTERİ BİLGİLERİ</div>
                         <div><strong>AD SOYAD:</strong> <span id="mCustName" class="font-bold">-</span></div>
                         <div><strong>TELEFON:</strong> <span id="mCustPhone">-</span></div>
-                        <div><strong>ADRES / V.D.:</strong> <span id="mCustAddress">-</span></div>
+                        <div><strong>E-POSTA:</strong> <span id="mCustEmail">-</span></div>
+                        <div><strong>TCKN / V.NO:</strong> <span id="mCustTaxNo">-</span></div>
+                        <div><strong>VERGİ DAİRESİ:</strong> <span id="mCustTaxOffice">-</span></div>
+                        <div><strong>ADRES:</strong> <span id="mCustAddress">-</span></div>
                     </div>
                     <div>
                         <div class="font-bold text-zinc-900 border-b border-zinc-200 pb-0.5 mb-1">ARAÇ & SERVİS BİLGİLERİ</div>
@@ -454,6 +471,9 @@
                 id: recordId,
                 custName: document.getElementById('custName').value.trim(),
                 custPhone: document.getElementById('custPhone').value.trim(),
+                custEmail: document.getElementById('custEmail').value.trim(),
+                custTaxNo: document.getElementById('custTaxNo').value.trim(),
+                custTaxOffice: document.getElementById('custTaxOffice').value.trim(),
                 custAddress: document.getElementById('custAddress').value.trim(),
                 carPlate: document.getElementById('carPlate').value.trim().toUpperCase(),
                 carBrand: document.getElementById('carBrand').value.trim(),
@@ -486,11 +506,14 @@
 
             document.getElementById('custName').value = record.custName || '';
             document.getElementById('custPhone').value = record.custPhone || '';
+            document.getElementById('custEmail').value = record.custEmail || '';
+            document.getElementById('custTaxNo').value = record.custTaxNo || '';
+            document.getElementById('custTaxOffice').value = record.custTaxOffice || '';
+            document.getElementById('custAddress').value = record.custAddress || '';
             document.getElementById('carPlate').value = record.carPlate || '';
             document.getElementById('carBrand').value = record.carBrand || '';
             document.getElementById('dateArrival').value = record.dateArrival || '';
             document.getElementById('dateDelivery').value = record.dateDelivery || '';
-            document.getElementById('custAddress').value = record.custAddress || '';
             document.getElementById('carProblem').value = record.carProblem || '';
             document.getElementById('carDiagnosis').value = record.carDiagnosis || '';
 
@@ -527,7 +550,8 @@
             const filtered = records.filter(r => 
                 (r.carPlate || '').toLowerCase().includes(query) ||
                 (r.custName || '').toLowerCase().includes(query) ||
-                (r.custPhone || '').toLowerCase().includes(query)
+                (r.custPhone || '').toLowerCase().includes(query) ||
+                (r.custTaxNo || '').toLowerCase().includes(query)
             );
 
             if(filtered.length === 0) {
@@ -540,7 +564,7 @@
                     <div>
                         <span class="px-2.5 py-0.5 bg-red-600 text-white font-black text-xs rounded uppercase">${r.carPlate || 'PLAKA'}</span>
                         <span class="text-xs font-bold text-white ml-2">${r.custName}</span>
-                        <div class="text-[11px] text-zinc-400 mt-1">${r.carBrand || 'Araç'} | Tarih: ${r.dateArrival || '-'}</div>
+                        <div class="text-[11px] text-zinc-400 mt-1">${r.carBrand || 'Araç'} | Tel: ${r.custPhone || '-'} | TC/V.No: ${r.custTaxNo || '-'}</div>
                     </div>
                     <div class="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end flex-wrap">
                         <div class="text-base font-black text-red-500 mr-2">${(r.grandTotal || 0).toLocaleString('tr-TR')} ₺</div>
@@ -562,6 +586,9 @@
             document.getElementById('mPaymentType').textContent = 'Ödeme: ' + (rec.paymentType || 'Nakit');
             document.getElementById('mCustName').textContent = rec.custName;
             document.getElementById('mCustPhone').textContent = rec.custPhone || '-';
+            document.getElementById('mCustEmail').textContent = rec.custEmail || '-';
+            document.getElementById('mCustTaxNo').textContent = rec.custTaxNo || '-';
+            document.getElementById('mCustTaxOffice').textContent = rec.custTaxOffice || '-';
             document.getElementById('mCustAddress').textContent = rec.custAddress || 'Belirtilmedi';
             document.getElementById('mCarPlate').textContent = rec.carPlate || '-';
             document.getElementById('mCarBrand').textContent = rec.carBrand || '-';
@@ -592,9 +619,3 @@
     </script>
 </body>
 </html>
-```eof
-
-### Yapılan Yenilikler:
-1. **Düzenle Butonu:** Müşteri geçmişindeki her kayda bir **Düzenle** butonu eklendi.
-2. **Forma Aktarma:** Butona basıldığında kaydın bilgileri (müşteri, araç, teşhis ve parça kalemleri) düzenleme modunda ana forma aktarılır.
-3. **Güncelleme ve İptal:** Düzenleme esnasında form üzerinde "Düzenleme Modu" göstergesi ve "Düzenlemeyi İptal Et" seçeneği belirir. Kaydedildiğinde mevcut kaydı Supabase ve veritabanı üzerinde günceller.
